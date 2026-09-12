@@ -1,4 +1,4 @@
-# Kartvizit Cep v1.0.5 — İlk geliştirme sürümü
+# Kartvizit Cep v1.2.0 — İlk geliştirme sürümü
 
 ## Windows'ta uygulama
 1. Çalışan `flutter run` terminalinde q tuşuna basın.
@@ -90,3 +90,39 @@ card_parser.dart içindeki üç if/else gövdesine süslü parantez eklendi. İ�
 
 ## v1.0.5 — Widget testi kaydırma hedefi
 Kullanıcı ortamında v1.0.4 analyze temiz ve 11 parser testi başarılı. Widget testi formda birden fazla Scrollable bulduğu için başarısız oluyordu. Tüm scrollUntilVisible çağrılarında aktif ListView altındaki dış Scrollable açıkça seçildi. Cep ve sabit alanları ayrı ayrı görünür duruma getirildikten sonra doğrulanıyor. Uygulama işlevleri değişmedi. Test teslim ortamında Flutter SDK olmadığı için çalıştırılamadı. Önce flutter test, başarılıysa flutter run -d emulator-5554 ile devam edin.
+
+
+## v1.1.0 — Okumadan önce kırpma
+Kamera ve galeriden gelen fotoğraf için Kartviziti kırp ekranı açılır. Köşeleri kartvizitin kenarlarına sürükleyin, tüm metni çerçevede tutun ve Kırp ve oku düğmesine basın. Çerçeve serbest oranlıdır; fotoğraf yakınlaştırılabilir. Kırpmadan devam et orijinali okur; geri düğmesi taramayı iptal eder. Android kayıp fotoğraf kurtarma akışı da kırpma ekranına gelir.
+
+Kırpılan görüntü kişi kontrol ekranında gösterilir. Geçici kırpma dosyası bu ekran kapanınca silinir; kaynak fotoğraf değiştirilmez. Desteklenen fotoğraflar kırpma öncesinde PNG biçimine dönüştürülür. Açılamayan biçimlerde kırpmadan devam et seçeneği sunulur. Perspektif düzeltmesi ve eksik logo harflerini tamamlama bu sürümde yoktur.
+
+Yeni bağımlılık: crop_your_image 2.0.0 (https://pub.dev/packages/crop_your_image/versions/2.0.0). Ek native kırpma izni veya iOS URL şeması gerekmez.
+
+Doğrulama: kırpma ekranının fotoğraf yükleme hatasında orijinalle devam etmesini kontrol eden widget testi eklendi. Flutter SDK bu ortamda bulunmadığından analyze, test ve Android/iOS derlemesi çalıştırılmadı. Kullanıcı bilgisayarında yukarıdaki komutları sırayla çalıştırın. Kendi kartvizitinizde masa arka planını dışarıda bırakıp yeniden okuyun; ad, telefonlar ve şirketi kontrol edin. Kamera akışını, galeriyi, kırpmadan devam etmeyi ve geri ile iptali deneyin. iPhone fotoğraf biçimleri ve gerçek kamera akışı cihazda ayrıca doğrulanmalıdır.
+
+Yerel kontroller başarılı olduğunda GitHub Desktop ile değişiklikleri (güncellenen pubspec.lock dahil) commit edip Push origin yapın. Codemagic sonraki derlemede yeni sürümü alacaktır. Apple Developer onayı geldikten sonra Release imzalama ve TestFlight ayarları tamamlanacaktır.
+
+
+## v1.1.1 — Kırpma testi zaman aşımı düzeltmesi
+Kullanıcı testinde diğer 12 test başarılı; yeni kırpma testi yükleme göstergesi animasyonu sürerken pumpAndSettle çağırdığı için zaman aşımına uğradı. Dosya okuma sonucu testin sanal zaman ortamında bekliyordu. Test artık kontrollü bir görüntü yükleyicisi kullanır: önce yükleme göstergesini doğrular, sonra hatayı tamamlar, hata ekranını ve kırpmadan devam sonucunu kontrol eder. Gerçek dosya okuma akışı aynı kalır. Keyfi bekleme ve gerçek disk bağımlılığı kaldırıldı.
+
+Flutter SDK burada bulunmadığından testler çalıştırılamadı. Kullanıcı bilgisayarında flutter analyze ve flutter test çalıştırılmalıdır.
+
+
+## v1.1.2 — Kırpma köşelerini tutma düzeltmesi
+Fotoğraf kaydırma/yakınlaştırma kapatıldı. Kırpma alanına 24 piksel kenar boşluğu eklendi; başlangıç çerçevesi fotoğrafın yüzde 75 boyutunda ortalanır. Köşe tutamakları yeşil dolgu, beyaz kenar ve sürükleme simgesiyle görünür hâle getirildi. Çerçeve serbest oranlı ve hareketlidir. Köşeleri basılı tutup sürükleyin; ortadan sürüklemek çerçeveyi taşır.
+
+Flutter SDK burada olmadığı için cihaz etkileşimi, analyze ve test çalıştırılamadı. Kullanıcı ortamında flutter pub get, flutter analyze, flutter test ve flutter run -d emulator-5554 ile doğrulayın.
+
+
+## v1.1.3 — Mevcut kişi düzenlemesinden dönüş
+Mükerrer uyarısında Mevcut kişiyi aç seçilince sistem rehber editörü açılır. Dönüşte artık oluşturma formu yerine Mevcut kişi ekranı gösterilir. Rehberde göster, Kişiyi tekrar düzenle ve Yeni kartvizit tara seçenekleri sunulur. Yeniden Rehbere kaydet düğmesi veya mükerrer döngüsü oluşmaz. Sistem editörü iptal edilse de yeni kişi oluşturulmaz; kaydetme sonucu platforma göre kesin olmayabileceği için bu ekran güncellemenin kaydedildiğini iddia etmez. Düzenleme ekranı açılamazsa form korunur ve hata mesajı gösterilir. Yeni kişi kayıt akışı aynı şekilde başarı ekranına gider.
+
+Doğrulama: Flutter SDK bu ortamda olmadığı için analyze, test ve cihaz derlemesi çalıştırılamadı. Yerelde flutter pub get, flutter analyze, flutter test ve flutter run -d emulator-5554 çalıştırın. Aynı kartı tarayıp Mevcut kişiyi aç ile düzenleyin, Save ile dönün: tekrar kayıt düğmesi çıkmamalı. İptal ederek dönüşte de yeni kayıt olmamalı. Rehberde göster ve Kişiyi tekrar düzenle seçeneklerini kontrol edin. Yeni kartvizit tara ana ekrana dönmeli.
+
+
+## v1.2.0 — Renkli arayüz
+Ana ekranın tanıtım kartına mor, mavi ve turkuaz geçiş eklendi. Kamera mavi, galeri mor/pembe, elle giriş turuncu/kiremit, kırpma ve rehbere kayıt yeşil geçişli butonlarla gösterilir. Butonlar gölgeli, geniş ve büyük yazılıdır. Devre dışı butonlar gri görünür. Arka plan açık lavanta, form alanları beyaz ve odak kenarları mordur. Son kontrol kartı mint rengindedir. İşlevler korunmuştur.
+
+Doğrulama: Flutter SDK burada olmadığı için analyze, test, ekran görüntüsü ve cihaz derlemesi çalıştırılamadı. Kullanıcı ortamında flutter pub get, flutter analyze, flutter test ve flutter run -d emulator-5554 ile doğrulayın. Ana ekran, kırpma ve formu kontrol edin.
