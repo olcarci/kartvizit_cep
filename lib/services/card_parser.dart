@@ -1,0 +1,129 @@
+import '../models/card_data.dart';
+
+/// Normalize TR national numbers; preserve explicit foreign country codes.
+String normalizePhone(String input) {
+  final value = input.trim();
+  final digits = value.replaceAll(RegExp(r'\D'), '');
+  if (value.startsWith('+')) return '+$digits';
+  if (digits.startsWith('00')) return '+${digits.substring(2)}';
+  if (digits.length == 11 && RegExp(r'^0[235]').hasMatch(digits)) {
+    return '+90${digits.substring(1)}';
+  }
+  if (digits.length == 10 && RegExp(r'^[235]').hasMatch(digits)) return '+90$digits';
+  if (digits.length == 12 && digits.startsWith('90')) return '+$digits';
+  return value;
+}
+
+String phoneKey(String input) => normalizePhone(input).replaceAll(RegExp(r'\D'), '');
+
+PhoneKind inferPhoneKind(String phone) {
+  final key = phoneKey(phone);
+  if (key.length == 12 && key.startsWith('905')) return PhoneKind.mobile;
+  if (key.length == 12 && RegExp(r'^90[23]').hasMatch(key)) return PhoneKind.work;
+  return PhoneKind.other;
+}
+
+class CardParser {
+  static final emailPattern = RegExp(r'[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}');
+  static final webPattern = RegExp(r'(?:https?://|www\.)[^\s,;]+', caseSensitive: false);
+  static final phonePattern = RegExp(r'\+?\d[\d ()\-.]{7,}\d');
+  static String fold(String s) => s.toLowerCase().replaceAll('i\u0307', 'i').replaceAll('ı', 'i').replaceAll('ş', 's').replaceAll('ğ', 'g').replaceAll('ü', 'u').replaceAll('ö', 'o').replaceAll('ç', 'c');
+  static final industry = RegExp(r'\b(ltd|sti|a\.s|limited|sirket|dogalgaz|insaat|mekanik|teknoloji|yazilim|ticaret|sanayi|otomotiv)\b');
+  // The folded string has the same character positions for these Turkish letters.
+  static final titlePattern = RegExp(
+    r'\b(?:(?:makine|makina|insaat|elektrik(?:\s+elektronik)?|bilgisayar|yazilim)\s+(?:muhendisi|muhendis|muh\.?)|(?:satis|pazarlama|genel|bolge|proje)\s+(?:muduru|yoneticisi|uzmani|danismani)|muhendisi|muhendis|muduru|mudur|yonetici|danisman|uzman|direktor|manager|engineer|director|ceo)(?![a-z])');
+  // Only change zero inside an otherwise alphabetic name token.
+  // Raw OCR remains visible for review; actual phone digits are never changed.
+  static String repairName(String value) => value.split(RegExp(r'\s+')).map((token) {
+    if (token.contains('0') && RegExp(r'^[A-Za-zÇĞİÖŞÜçğıöşü0]+$').hasMatch(token)
+        && token.replaceAll('0', '').length >= 2) {
+      return token.replaceAll('0', 'O');
+    }
+    return token;
+  }).join(' ');
+
+  static bool _nameLike(String s) {
+    final words = s.split(RegExp(r'\s+'));
+    return words.length >= 2 && words.length <= 5 && !RegExp(r'[\d:@/]').hasMatch(s)
+      && !RegExp(r'\b(yetkili|bayi|bayii|servis|cozum|cozumleri)\b').hasMatch(fold(s));
+  }
+  static String _compactLogo(String s) {
+    final parts = s.split(RegExp(r'\s+'));
+    return parts.length >= 3 && parts.every((p) => RegExp(r'^[A-Za-zÇĞİÖŞÜçğıöşü]$').hasMatch(p)) ? parts.join() : s;
+  }
+
+  CardData parse(String text) {
+    final data = CardData();
+    final lines = text.split(RegExp(r'[\r\n]+')).map((s) => _compactLogo(s.trim())).where((s) => s.isNotEmpty).toList();
+    final names = <String>[];
+    final addresses = <String>[];
+    final seen = <String>{};
+    for (var i = 0; i < lines.length; i++) {
+      final line = lines[i];
+      final lower = fold(line);
+      final mail = emailPattern.firstMatch(line);
+      final web = webPattern.firstMatch(line);
+      if (mail != null && data.email.isEmpty) data.email = mail.group(0)!;
+      if (web != null && data.website.isEmpty) data.website = web.group(0)!.replaceAll(RegExp(r'[.)]+$'), '');
+      if (RegExp(r'\b(vergi|vkn|tckn|iban|mersis|sicil)\b').hasMatch(lower)) continue;
+      final isAddress = RegExp(r'\b(adres|address|mah|mahalle|mahallesi|cad|caddesi|sok|sokak|bulvari|apt|apartmani|kat|daire|no)\b').hasMatch(lower);
+      if (isAddress && mail == null && web == null) { addresses.add(line); continue; }
+      var hasPhone = false;
+      if (mail == null && web == null) {
+        for (final m in phonePattern.allMatches(line)) {
+          final value = normalizePhone(m.group(0)!);
+          final key = phoneKey(value);
+          if (key.length >= 10 && key.length <= 15) {
+            hasPhone = true;
+            if (seen.add(key)) {
+              data.phones.add(value);
+              var kind = inferPhoneKind(value);
+              if (RegExp(r'\b(gsm|cep|mobile|cell)\b').hasMatch(lower)) {
+                kind = PhoneKind.mobile;
+              } else if (kind == PhoneKind.other && RegExp(r'\b(tel|telefon|office|work)\b').hasMatch(lower)) {
+                kind = PhoneKind.work;
+              }
+              data.phoneKinds[value] = kind;
+            }
+          }
+        }
+      }
+      if (mail != null || web != null || hasPhone) continue;
+      if (industry.hasMatch(lower) && titlePattern.firstMatch(lower) == null) {
+        if (data.company.isEmpty) {
+          var company = line;
+          // A single-word brand followed by a separate industry line.
+          if (i > 0 && RegExp(r'^(dogalgaz|yazilim|insaat|teknoloji|mekanik)$').hasMatch(lower)) {
+            final previous = lines[i - 1];
+            if (RegExp(r'^[A-Za-zÇĞİÖŞÜçğıöşü-]{2,30}$').hasMatch(previous)
+                && titlePattern.firstMatch(fold(previous)) == null) {
+              company = '$previous $line';
+              names.remove(previous);
+            }
+          }
+          data.company = company;
+        }
+        continue;
+      }
+      final title = titlePattern.firstMatch(lower);
+      if (title != null) {
+        if (data.title.isEmpty) {
+          final titleText = line.substring(title.start, title.end).trim();
+          data.title = titleText;
+          // Only expand the known abbreviation, never guess an unreadable name.
+          if (RegExp(r'^(makine|makina) muh\.?$').hasMatch(fold(data.title))) data.title = 'Makine Mühendisi';
+        }
+        final rest = '${line.substring(0, title.start)} ${line.substring(title.end)}'
+          .replaceAll(RegExp(r'^[\s:|,;.-]+|[\s:|,;.-]+$'), '').trim();
+        final repaired = repairName(rest);
+        if (_nameLike(repaired)) data.name = repaired;
+        continue;
+      }
+      final repaired = repairName(line);
+      if (_nameLike(repaired)) names.add(repaired);
+    }
+    if (data.name.isEmpty && names.isNotEmpty) data.name = names.first;
+    data.address = addresses.join('\n');
+    return data;
+  }
+}
