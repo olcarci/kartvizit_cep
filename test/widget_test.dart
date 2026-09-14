@@ -42,6 +42,8 @@ void main() {
     expect(find.text('Fotoğraflardan seç'), findsOneWidget);
     expect(gallery, findsOneWidget);
     expect(find.text('Galeriden seç'), findsNothing);
+    expect(find.text('SMART CONTACT ENGINE'), findsOneWidget);
+    expect(find.text('OCR'), findsOneWidget);
   });
 
   testWidgets('Galeri bilgileri rehbere eklemeden güncellenebilir', (tester) async {

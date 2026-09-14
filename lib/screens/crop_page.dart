@@ -4,6 +4,7 @@ import 'dart:ui' as ui;
 
 import 'package:crop_your_image/crop_your_image.dart';
 import 'package:flutter/material.dart';
+import '../widgets/tech_background.dart';
 import '../widgets/vivid_button.dart';
 
 class CropSelection {
@@ -68,10 +69,15 @@ class _CropPageState extends State<CropPage> {
     canPop: !_cropping,
     child: Scaffold(
       appBar: AppBar(title: const Text('Kartviziti kırp')),
-      body: SafeArea(child: Column(children: [
-        const Padding(
-          padding: EdgeInsets.all(16),
-          child: Text('Köşeleri kartvizitin kenarlarına sürükle. Tüm yazılar çerçevenin içinde kalsın.'),
+      body: TechBackground(child: SafeArea(child: Column(children: [
+        const TechPanel(
+          margin: EdgeInsets.fromLTRB(16, 12, 16, 4),
+          padding: EdgeInsets.all(15),
+          child: Row(children: [
+            Icon(Icons.crop_free_rounded, color: Color(0xFF67F2C4)),
+            SizedBox(width: 12),
+            Expanded(child: Text('Köşeleri kartvizitin kenarlarına sürükle. Tüm yazılar çerçevenin içinde kalsın.')),
+          ]),
         ),
         Expanded(child: FutureBuilder<Uint8List>(
           future: _image,
@@ -96,7 +102,7 @@ class _CropPageState extends State<CropPage> {
               cornerDotBuilder: (size, alignment) => Container(
                 width: size, height: size,
                 decoration: BoxDecoration(
-                  color: const Color(0xFF006C62),
+                  color: const Color(0xFF00A8C6),
                   border: Border.all(color: Colors.white, width: 3),
                   borderRadius: BorderRadius.circular(8),
                 ),
@@ -130,7 +136,7 @@ class _CropPageState extends State<CropPage> {
             child: const Text('Kırpmadan devam et'),
           ),
         ])),
-      ])),
+      ]))),
     ),
   );
 }

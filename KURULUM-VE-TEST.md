@@ -1,4 +1,11 @@
-# Kartvizit Cep v1.3.3 — Şirket temizleme ve ad-soyad ayrımı
+# Kartvizit Cep v1.4.0 — Teknolojik 3D arayüz
+
+## v1.4.0 görünüm yeniliği
+- Koyu lacivert/füme, ince ızgara ve yükselen finans grafiği desenli arka plan eklendi.
+- Ana düğmeler neon gölgeli, basma hareketli ve fiziksel alt katmanlı 3D tasarıma geçirildi.
+- Ana ekran, kartvizit galerisi, kişi formu ve kırpma ekranında ortak cam panel tasarımı kullanıldı.
+- Turkuaz, mor ve yeşil vurgu renkleri; OCR, galeri ve rehber durum rozetleri eklendi.
+- Tarama, OCR, uygulama galerisi, arama, rehber kaydı ve mevcut kişiyle birleştirme işlevleri değiştirilmedi.
 
 ## Windows'ta uygulama
 1. Çalışan `flutter run` terminalinde q tuşuna basın.

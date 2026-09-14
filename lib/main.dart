@@ -10,6 +10,7 @@ import 'services/card_archive_service.dart';
 import 'services/contact_merge_service.dart';
 import 'services/card_parser.dart';
 import 'screens/crop_page.dart';
+import 'widgets/tech_background.dart';
 import 'widgets/vivid_button.dart';
 
 void main() { WidgetsFlutterBinding.ensureInitialized(); runApp(const KartvizitApp()); }
@@ -19,17 +20,24 @@ class KartvizitApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) => MaterialApp(
     title: 'Kartvizit Cep', debugShowCheckedModeBanner: false,
-    theme: ThemeData(useMaterial3: true,
-      colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF6550C7)),
-      scaffoldBackgroundColor: const Color(0xFFF4F5FC),
-      appBarTheme: const AppBarTheme(backgroundColor: Color(0xFFF4F5FC),
-        foregroundColor: Color(0xFF262440), surfaceTintColor: Colors.transparent,
-        titleTextStyle: TextStyle(fontSize: 23, fontWeight: FontWeight.bold, color: Color(0xFF262440))),
-      textTheme: const TextTheme(bodyLarge: TextStyle(fontSize: 18), bodyMedium: TextStyle(fontSize: 16)),
-      inputDecorationTheme: InputDecorationTheme(filled: true, fillColor: Colors.white,
+    theme: ThemeData(useMaterial3: true, brightness: Brightness.dark,
+      colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF00D9FF), brightness: Brightness.dark,
+        primary: const Color(0xFF45E9F5), secondary: const Color(0xFF9B7BFF), surface: const Color(0xFF12223A)),
+      scaffoldBackgroundColor: Colors.transparent,
+      canvasColor: const Color(0xFF0A1830),
+      dialogTheme: const DialogThemeData(backgroundColor: Color(0xFF12223A), surfaceTintColor: Colors.transparent),
+      cardTheme: CardThemeData(color: const Color(0xFF12223A).withValues(alpha: 0.94), surfaceTintColor: Colors.transparent),
+      snackBarTheme: const SnackBarThemeData(backgroundColor: Color(0xFF15324A), contentTextStyle: TextStyle(color: Colors.white)),
+      appBarTheme: const AppBarTheme(backgroundColor: Colors.transparent,
+        foregroundColor: Color(0xFFEAFBFF), surfaceTintColor: Colors.transparent, elevation: 0,
+        titleTextStyle: TextStyle(fontSize: 23, fontWeight: FontWeight.bold, color: Color(0xFFEAFBFF), letterSpacing: 0.2)),
+      textTheme: const TextTheme(bodyLarge: TextStyle(fontSize: 18, color: Color(0xFFE7F2FF)), bodyMedium: TextStyle(fontSize: 16, color: Color(0xFFB8C8DD))),
+      inputDecorationTheme: InputDecorationTheme(filled: true, fillColor: const Color(0xFF12223A).withValues(alpha: 0.92),
+        labelStyle: const TextStyle(color: Color(0xFF9FB4CC)), hintStyle: const TextStyle(color: Color(0xFF8294AA)),
+        prefixIconColor: const Color(0xFF5EE7F4), suffixIconColor: const Color(0xFF9B7BFF),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(18)),
-        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(18), borderSide: const BorderSide(color: Color(0xFFD9DDF0))),
-        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(18), borderSide: const BorderSide(color: Color(0xFF6550C7), width: 2))),
+        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(18), borderSide: const BorderSide(color: Color(0xFF284768))),
+        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(18), borderSide: const BorderSide(color: Color(0xFF45E9F5), width: 2))),
       filledButtonTheme: FilledButtonThemeData(style: FilledButton.styleFrom(
         minimumSize: const Size(double.infinity, 56), textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600))),
     ), home: const HomePage());
@@ -118,23 +126,36 @@ class _HomePageState extends State<HomePage> {
     } finally { await reader.close(); }
   }
   @override Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('Kartvizit Cep')),
-    body: SafeArea(child: Center(child: ConstrainedBox(constraints: const BoxConstraints(maxWidth: 560),
+    appBar: AppBar(title: const Text('Kartvizit Cep', style: TextStyle(fontFamily: 'CaveatBrush', fontSize: 30, fontWeight: FontWeight.w400, color: Color(0xFFEAFBFF), letterSpacing: 0.3))),
+    body: TechBackground(child: SafeArea(child: Center(child: ConstrainedBox(constraints: const BoxConstraints(maxWidth: 560),
       child: ListView(padding: const EdgeInsets.all(24), children: [
-        Container(padding: const EdgeInsets.all(28), decoration: BoxDecoration(
-          gradient: const LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight,
-            colors: [Color(0xFF7138B7), Color(0xFF405AC1), Color(0xFF067C8B)]),
-          boxShadow: [BoxShadow(color: const Color(0xFF6550C7).withValues(alpha: 0.23), blurRadius: 24, offset: const Offset(0, 10))],
-          borderRadius: BorderRadius.circular(28)),
-          child: const Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Icon(Icons.document_scanner_rounded, color: Color(0xFFFFE39A), size: 56), SizedBox(height: 20),
-            Text('Yeni tanışmalar,\nhep elinin altında.', style: TextStyle(color: Colors.white, fontSize: 30, fontWeight: FontWeight.bold, height: 1.15)),
-            SizedBox(height: 16), Text('Kartviziti tara, bilgileri kontrol et ve rehberine kaydet.', style: TextStyle(color: Color(0xFFE3EFFA), fontSize: 18)),
-          ])),
+        TechPanel(padding: const EdgeInsets.all(24), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          const TechBadge(label: 'SMART CONTACT ENGINE', icon: Icons.auto_awesome_rounded),
+          const SizedBox(height: 22),
+          Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Container(padding: const EdgeInsets.all(14), decoration: BoxDecoration(
+              gradient: const LinearGradient(colors: [Color(0xFF00C6FF), Color(0xFF7B61FF)]),
+              borderRadius: BorderRadius.circular(18),
+              boxShadow: const [BoxShadow(color: Color(0x6600D9FF), blurRadius: 22)]),
+              child: const Icon(Icons.document_scanner_rounded, color: Colors.white, size: 36)),
+            const Spacer(),
+            const Icon(Icons.show_chart_rounded, color: Color(0xFF67F2C4), size: 42),
+          ]),
+          const SizedBox(height: 22),
+          const Text('Yeni tanışmalar,\nhep elinin altında.', style: TextStyle(fontFamily: 'Caveat', color: Colors.white, fontSize: 44, fontWeight: FontWeight.w700, height: 1.05, fontVariations: [FontVariation('wght', 700)])),
+          const SizedBox(height: 13),
+          const Text('Kartviziti tara, bilgileri kontrol et ve rehberine kaydet.', style: TextStyle(color: Color(0xFFB8CDE5), fontSize: 17)),
+          const SizedBox(height: 20),
+          const Wrap(spacing: 9, runSpacing: 9, children: [
+            TechBadge(label: 'OCR', icon: Icons.center_focus_strong_rounded),
+            TechBadge(label: 'GALERİ', icon: Icons.collections_bookmark_rounded),
+            TechBadge(label: 'REHBER', icon: Icons.contacts_rounded),
+          ]),
+        ])),
         const SizedBox(height: 28),
-        VividButton(onPressed: _busy ? null : () => _scan(ImageSource.camera), icon: Icons.camera_alt_rounded, label: 'Kartvizit tara', colors: const [Color(0xFF087D95), Color(0xFF1565B5)]),
+        VividButton(onPressed: _busy ? null : () => _scan(ImageSource.camera), icon: Icons.camera_alt_rounded, label: 'Kartvizit tara', accent: const Color(0xFF45E9F5)),
         const SizedBox(height: 12),
-        VividButton(onPressed: _busy ? null : () => _scan(ImageSource.gallery), icon: Icons.photo_library_rounded, label: 'Fotoğraflardan seç', colors: const [Color(0xFF873ABC), Color(0xFFBC286F)]),
+        VividButton(onPressed: _busy ? null : () => _scan(ImageSource.gallery), icon: Icons.photo_library_rounded, label: 'Fotoğraflardan seç', accent: const Color(0xFF9B7BFF)),
         const SizedBox(height: 12),
         VividButton(
           onPressed: _busy ? null : () => Navigator.of(context).push(MaterialPageRoute<void>(
@@ -142,19 +163,17 @@ class _HomePageState extends State<HomePage> {
           )),
           icon: Icons.collections_bookmark_rounded,
           label: 'Kartvizit Galerisi',
-          colors: const [Color(0xFF137A5C), Color(0xFF45A049)],
+          accent: const Color(0xFF67F2C4),
         ),
         const SizedBox(height: 12),
-        VividButton(onPressed: _busy ? null : () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => EditPage(data: CardData()))), icon: Icons.edit_note_rounded, label: 'Bilgileri elle gir', colors: const [Color(0xFFAB590E), Color(0xFFBA3E31)]),
+        VividButton(onPressed: _busy ? null : () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => EditPage(data: CardData()))), icon: Icons.edit_note_rounded, label: 'Bilgileri elle gir', accent: const Color(0xFFFFC168)),
         if (_busy) const Padding(padding: EdgeInsets.all(20), child: Column(children: [CircularProgressIndicator(), SizedBox(height: 12), Text('Kartvizit okunuyor…')])),
         const SizedBox(height: 24),
-        Container(padding: const EdgeInsets.all(16), decoration: BoxDecoration(
-          color: const Color(0xFFE5F3EF), borderRadius: BorderRadius.circular(22)),
-          child: const ListTile(contentPadding: EdgeInsets.zero,
-            leading: Icon(Icons.verified_user_rounded, color: Color(0xFF087C72), size: 34),
-            title: Text('Son kontrol sende', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF164E45))),
-            subtitle: Text('Okunan ad, şirket ve numaraları kaydetmeden önce kontrol et.'))),
-      ])))),
+        const TechPanel(child: ListTile(contentPadding: EdgeInsets.zero,
+          leading: Icon(Icons.verified_user_rounded, color: Color(0xFF67F2C4), size: 34),
+          title: Text('Veriler cihazında güvende', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFFEAFBFF))),
+          subtitle: Text('Okunan ad, şirket ve numaraları kaydetmeden önce kontrol et.'))),
+      ]))))),
   );
 }
 
@@ -242,7 +261,7 @@ class _ArchivePageState extends State<ArchivePage> {
   @override
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(title: const Text('Kartvizit Galerisi')),
-    body: SafeArea(child: Center(child: ConstrainedBox(
+    body: TechBackground(child: SafeArea(child: Center(child: ConstrainedBox(
       constraints: const BoxConstraints(maxWidth: 700),
       child: FutureBuilder<List<ArchivedCard>>(
         future: _cards,
@@ -301,7 +320,7 @@ class _ArchivePageState extends State<ArchivePage> {
                   alignment: Alignment.centerLeft,
                   child: Text(
                     query.isEmpty ? '${allCards.length} kartvizit' : '${cards.length} sonuç',
-                    style: const TextStyle(color: Color(0xFF62647A), fontWeight: FontWeight.w600),
+                    style: const TextStyle(color: Color(0xFF8FEAF4), fontWeight: FontWeight.w600),
                   ),
                 ),
               ),
@@ -328,14 +347,17 @@ class _ArchivePageState extends State<ArchivePage> {
                               ? card.data.company
                               : 'Kartvizit kaydı';
                           return Card(
-                            elevation: 2,
+                            elevation: 8,
                             clipBehavior: Clip.antiAlias,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(22),
+                              side: const BorderSide(color: Color(0x553BE7F3)),
+                            ),
                             child: InkWell(
                               onTap: () => _open(card),
                               child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
                                 Container(
-                                  color: const Color(0xFFE9EBF7),
+                                  color: const Color(0xFF0B1526),
                                   height: 180,
                                   child: Image.file(
                                     File(card.imagePath),
@@ -353,7 +375,7 @@ class _ArchivePageState extends State<ArchivePage> {
                                   trailing: IconButton(
                                     tooltip: 'Arşivden sil',
                                     onPressed: () => _delete(card),
-                                    icon: const Icon(Icons.delete_outline_rounded, color: Color(0xFFB43B45)),
+                                    icon: const Icon(Icons.delete_outline_rounded, color: Color(0xFFFF7085)),
                                   ),
                                 ),
                               ]),
@@ -366,7 +388,7 @@ class _ArchivePageState extends State<ArchivePage> {
           );
         },
       ),
-    ))),
+    )))),
   );
 }
 
@@ -521,29 +543,25 @@ class _EditPageState extends State<EditPage> {
   }
   @override Widget build(BuildContext context) => PopScope(canPop: !_saving, child: Scaffold(
     appBar: AppBar(title: Text(_savedId == null ? 'Kişi bilgilerini kontrol et' : _openedExisting ? 'Mevcut kişi' : 'Kayıt tamamlandı')),
-    body: SafeArea(child: Center(child: ConstrainedBox(constraints: const BoxConstraints(maxWidth: 600),
+    body: TechBackground(child: SafeArea(child: Center(child: ConstrainedBox(constraints: const BoxConstraints(maxWidth: 600),
       child: _savedId != null ? ListView(padding: const EdgeInsets.all(28), children: [
-        const SizedBox(height: 40), Icon(_openedExisting ? Icons.person_outline : Icons.check_circle, size: 88, color: const Color(0xFF126B62)),
+        const SizedBox(height: 40), Icon(_openedExisting ? Icons.person_outline : Icons.check_circle, size: 88, color: const Color(0xFF67F2C4)),
         const SizedBox(height: 24), Text(_openedExisting ? 'Mevcut kişiyle devam edildi' : 'Rehbere kaydedildi', textAlign: TextAlign.center, style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
         const SizedBox(height: 12), Text(_openedExisting ? 'Değişiklikleri rehberin düzenleme ekranında kaydettiysen işlem tamam. Rehberde göster ile kontrol edebilirsin.' : (_v(0).isEmpty ? _v(1) : _v(0)), textAlign: TextAlign.center), const SizedBox(height: 32),
         if (_openedExisting) OutlinedButton(onPressed: () => _editExistingContact(_savedId!), child: const Text('Kişiyi tekrar düzenle')),
         FilledButton(onPressed: () async { try { await FlutterContacts.native.showViewer(_savedId!); } catch (_) { _message('Rehber açılamadı. Telefonun Kişiler uygulamasından kontrol edebilirsiniz.'); } }, child: const Text('Rehberde göster')),
         TextButton(onPressed: () => Navigator.pop(context), child: const Text('Yeni kartvizit tara')),
       ]) : Form(key: _form, child: ListView(padding: const EdgeInsets.all(20), children: [
-        if (widget.imagePath != null) ClipRRect(borderRadius: BorderRadius.circular(18), child: Image.file(File(widget.imagePath!), height: 170, fit: BoxFit.contain, errorBuilder: (context, error, stackTrace) => const Text('Fotoğraf önizlemesi açılamadı.'))),
-        if (widget.onDataChanged != null) Container(
+        if (widget.imagePath != null) TechPanel(padding: const EdgeInsets.all(10), child: ClipRRect(borderRadius: BorderRadius.circular(14), child: Image.file(File(widget.imagePath!), height: 170, fit: BoxFit.contain, errorBuilder: (context, error, stackTrace) => const Text('Fotoğraf önizlemesi açılamadı.')))),
+        if (widget.onDataChanged != null) TechPanel(
           margin: const EdgeInsets.only(top: 16),
           padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: const Color(0xFFE5F3EF),
-            borderRadius: BorderRadius.circular(16),
-          ),
           child: const Row(children: [
-            Icon(Icons.collections_bookmark_rounded, color: Color(0xFF137A5C)),
+            Icon(Icons.collections_bookmark_rounded, color: Color(0xFF67F2C4)),
             SizedBox(width: 10),
             Expanded(child: Text(
               'Bu kart uygulama galerisinde saklanıyor. Rehbere yalnızca aşağıdaki düğmeyle eklenir.',
-              style: TextStyle(color: Color(0xFF164E45), fontWeight: FontWeight.w600),
+              style: TextStyle(color: Color(0xFFD7F7F4), fontWeight: FontWeight.w600),
             )),
           ]),
         ),
@@ -573,6 +591,6 @@ class _EditPageState extends State<EditPage> {
         VividButton(onPressed: _saving ? null : _save, icon: Icons.person_add_alt_1, label: _saving ? 'Kaydediliyor…' : 'Rehbere kaydet'),
         const SizedBox(height: 24),
       ])),
-    ))),
+    )))),
   ));
 }
