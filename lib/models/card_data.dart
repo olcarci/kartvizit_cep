@@ -8,6 +8,40 @@ class CardData {
     this.email = '', this.website = '', this.address = '', List<String>? phones, Map<String, PhoneKind>? phoneKinds})
       : phones = phones ?? [], phoneKinds = phoneKinds ?? {};
 
+  factory CardData.fromJson(Map<String, dynamic> json) {
+    final phones = (json['phones'] as List<dynamic>? ?? const [])
+        .map((value) => value.toString())
+        .toList();
+    final storedKinds = (json['phoneKinds'] as Map<String, dynamic>? ?? const {});
+    final kinds = <String, PhoneKind>{};
+    for (final phone in phones) {
+      final name = storedKinds[phone]?.toString();
+      final matchingKinds = PhoneKind.values.where((kind) => kind.name == name);
+      kinds[phone] = matchingKinds.isEmpty ? PhoneKind.other : matchingKinds.first;
+    }
+    return CardData(
+      name: json['name']?.toString() ?? '',
+      company: json['company']?.toString() ?? '',
+      title: json['title']?.toString() ?? '',
+      email: json['email']?.toString() ?? '',
+      website: json['website']?.toString() ?? '',
+      address: json['address']?.toString() ?? '',
+      phones: phones,
+      phoneKinds: kinds,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    'name': name,
+    'company': company,
+    'title': title,
+    'email': email,
+    'website': website,
+    'address': address,
+    'phones': phones,
+    'phoneKinds': {for (final entry in phoneKinds.entries) entry.key: entry.value.name},
+  };
+
   String phoneType(String phone) => switch (phoneKinds[phone]) {
     PhoneKind.mobile => 'CELL',
     PhoneKind.work => 'WORK',

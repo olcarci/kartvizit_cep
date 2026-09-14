@@ -1,4 +1,4 @@
-# Kartvizit Cep v1.2.1 — İlk geliştirme sürümü
+# Kartvizit Cep v1.3.0 — Uygulama içi kartvizit galerisi
 
 ## Windows'ta uygulama
 1. Çalışan `flutter run` terminalinde q tuşuna basın.
@@ -18,7 +18,7 @@ Her komut başarıyla bittiğinde sonraki komuta geçin. Hata durumunda çıktı
 Eski pubspec.lock bilerek pakete konulmadı: flutter pub get yeni bağımlılıkları çözüp mevcut kilit dosyanızı günceller. Bu başarılı dosyayı sonraki ZIP/commit içine dahil edin.
 
 ## Emülatörde gerçek OCR testi
-Bilgisayarınızdaki net bir kartvizit JPG/PNG dosyasını emülatör penceresine sürükleyin. Uygulamada Galeriden seç ile açın; sistem seçicisinde gerekirse Dosyalar/Downloads bölümüne geçin. Emülatörün sanal kamerası gerçek kartvizit göstermez; kamerayı gerçek Android telefonda ayrıca test edin.
+Bilgisayarınızdaki net bir kartvizit JPG/PNG dosyasını emülatör penceresine sürükleyin. Uygulamada Fotoğraflardan seç ile açın; sistem seçicisinde gerekirse Dosyalar/Downloads bölümüne geçin. Emülatörün sanal kamerası gerçek kartvizit göstermez; kamerayı gerçek Android telefonda ayrıca test edin.
 1. Telefon, e-posta ve Türkçe isim içeren kartviziti okuyun.
 2. Yanlış veya boş alanları düzeltin. Birden fazla telefon için her satıra bir numara yazın.
 3. Rehbere kaydet deyip rehber izni verin. Başarı ekranından Rehberde göster ile doğrulayın.
@@ -28,9 +28,9 @@ Bilgisayarınızdaki net bir kartvizit JPG/PNG dosyasını emülatör penceresin
 7. Büyük sistem yazı boyutunda ekranı kaydırarak bütün alanlara erişilebildiğini kontrol edin.
 
 ## Kapsam ve sınırlamalar
-Kamera/galeri, cihaz üzerinde Latin metin OCR, düzenlenebilir alanlar, çoklu telefon, izinli rehber kaydı, telefon/e-posta mükerrer kontrolü ve kayıt sonrası kişi görüntüleme eklendi. Türkçe telefonlar 0/+90/0090 biçimlerinde eşleştirilir. İsim, şirket, unvan ve adres ayırma kurallara dayalı tahmindir; her tasarımda doğru sonuç garanti edilmez. İnternetsiz OCR cihaz testi yapılmalıdır. Kartvizit arşivi, bulut eşitleme ve otomatik birleştirme bu sürümde yoktur.
+Kamera/telefon fotoğrafları, cihaz üzerinde Latin metin OCR, uygulama içi kartvizit galerisi, düzenlenebilir alanlar, çoklu telefon, izinli rehber kaydı, telefon/e-posta mükerrer kontrolü ve kayıt sonrası kişi görüntüleme bulunur. Türkçe telefonlar 0/+90/0090 biçimlerinde eşleştirilir. İsim, şirket, unvan ve adres ayırma kurallara dayalı tahmindir; her tasarımda doğru sonuç garanti edilmez. İnternetsiz OCR cihaz testi yapılmalıdır. Bulut eşitleme ve otomatik kişi birleştirme bu sürümde yoktur.
 
-Fotoğraf uygulamanın geçici alanında kalabilir; kalıcı fotoğraf arşivi tutulmaz. Rehber kaydının Google/iCloud eşitlemesi telefonun kendi hesap ayarlarına bağlıdır. iOS sınırlı rehber izninde tüm rehberde mükerrer kontrolü mümkün olmadığından bu sürüm tam erişim ister.
+Taranan/kırpılan kartvizit fotoğrafı uygulamanın özel belge alanındaki kalıcı galeriye kopyalanır. Rehber kaydının Google/iCloud eşitlemesi telefonun kendi hesap ayarlarına bağlıdır. iOS sınırlı rehber izninde tüm rehberde mükerrer kontrolü mümkün olmadığından bu sürüm tam erişim ister.
 
 ## iPhone
 Minimum iOS 15.5; Android minimum API 24. iOS izin metinleri, deployment target ve Podfile hazırlandı. macOS/Xcode ve CocoaPods kurulu ortamda flutter pub get, ardından flutter build ios --no-codesign ile derleme kontrolü yapılmalı; gerçek telefon için Apple imzalama ayarlanmalıdır. Mevcut Swift Package Manager proje yapısı korundu; CocoaPods bağımlılıkları için Podfile eklendi. iOS derleme ve cihaz testi henüz yapılmadı.
@@ -39,12 +39,14 @@ Minimum iOS 15.5; Android minimum API 24. iOS izin metinleri, deployment target 
 Kullanıcının v1.0.0 çalıştırmasında beş parser testi geçti. Widget testi, küçük test ekranında henüz oluşturulmamış elle giriş düğmesini ararken başarısız oldu. Teste scrollUntilVisible eklendi; iki unnecessary_underscores bildirimi giderildi. v1.0.1 testleri teslim ortamında çalıştırılamadı.
 
 ## Doğrulama durumu
-Teslim ortamında Flutter, Dart, Android SDK ve Xcode yoktur. Flutter analyze / flutter test / APK / iOS derlemesi çalıştırılamadı. Parser ve ekran testleri eklendi fakat henüz çalıştırılmadı. XML/plist/YAML ve ZIP yapısı kontrol edildi. Hazır APK veya mağaza yayını değildir.
+Teslim ortamında Flutter, Dart, Android SDK ve Xcode yoktur. Flutter analyze / flutter test / APK / iOS derlemesi çalıştırılamadı. Parser, galeri servisi, arama ve ekran testleri eklendi fakat henüz çalıştırılmadı. XML/plist/YAML ve ZIP yapısı kontrol edildi. Hazır APK veya mağaza yayını değildir.
 
 ## Dosyalar
-- lib/main.dart: ana ekran, fotoğraf seçimi/OCR, kişi kontrol formu, izin/kayıt/mükerrer akışı.
+- lib/main.dart: ana ekran, fotoğraf seçimi/OCR, kartvizit galerisi, arama, kişi kontrol formu, izin/kayıt/mükerrer akışı.
 - lib/models/card_data.dart: düzenlenen kişi verisi ve güvenli vCard alan kaçışları.
+- lib/models/archived_card.dart: galeri kaydının fotoğraf, tarih ve kişi bilgileri.
 - lib/services/card_parser.dart: OCR satırlarından alan çıkarma ve telefon normalizasyonu.
+- lib/services/card_archive_service.dart: kartvizit fotoğraflarını ve bilgilerini cihazda kaydetme, güncelleme ve silme.
 - pubspec.yaml: sabit doğrudan paket sürümleri.
 - android/app/src/main/AndroidManifest.xml: rehber izinleri ve uygulama adı.
 - android/app/build.gradle.kts: minimum Android sürümü; çalışan NDK seçimi korundu.
@@ -55,6 +57,7 @@ Paket belgeleri:
 https://pub.dev/packages/image_picker/versions/1.2.3
 https://pub.dev/packages/google_mlkit_text_recognition/versions/0.17.1
 https://pub.dev/packages/flutter_contacts/versions/2.5.0
+https://pub.dev/packages/path_provider/versions/2.1.6
 
 
 ## v1.0.2 — Kartvizit ayrıştırma ve telefon biçimi
@@ -131,3 +134,12 @@ Doğrulama: Flutter SDK burada olmadığı için analyze, test, ekran görüntü
 Apple Developer ve App Store Connect üzerinde kaydedilen `com.olcarci.kartvizitcep` kimliği iOS Runner yapılandırmasına uygulandı. Android namespace ve applicationId de aynı kalıcı kimlikle eşleştirildi. RunnerTests kimliği `com.olcarci.kartvizitcep.RunnerTests` olarak güncellendi. Sürüm 1.2.1, derleme numarası 12 oldu.
 
 Bu kimlik değişikliği nedeniyle Android, emülatörde eski geliştirme uygulamasından ayrı bir uygulama olarak görünebilir. Flutter SDK bu ortamda bulunmadığından analyze, test ve Android/iOS derlemesi çalıştırılamadı. Yerelde `flutter pub get`, `flutter analyze`, `flutter test` ve `flutter run -d emulator-5554` komutlarını çalıştırın. Başarılı sonuçtan sonra güncellenen `pubspec.lock` dahil değişiklikleri GitHub'a gönderin; Codemagic Release iOS derlemesinde bu Bundle ID'yi kullanmalıdır.
+
+## v1.3.0 — Kartvizit Galerisi
+Kamera veya telefon fotoğraflarından seçilen kartvizit, kırpılıp başarıyla okunduktan sonra uygulamanın özel belge alanına otomatik kaydedilir. Ana ekrandaki `Kartvizit Galerisi` düğmesi fotoğrafı, ad-soyadı, şirketi ve tarama tarihini gösterir. Kartın üzerine dokunulduğunda okunan bilgiler yeniden açılır. OCR'nin eksik bıraktığı şirket gibi alanlar düzeltilip `Galeri bilgilerini güncelle` ile yalnızca uygulama galerisine kaydedilebilir; bu işlem rehbere kişi eklemez. İstenirse ayrı `Rehbere kaydet` düğmesiyle iPhone rehberine eklenir. Çöp kutusu yalnızca uygulama galerisindeki kartı siler, telefon rehberindeki kişiyi etkilemez.
+
+Arşivin üstündeki arama alanı ad-soyad ve şirket adına göre anlık filtreleme yapar. Türkçe karakterler arama sırasında sadeleştirildiğinden `ZİRVE`, `zirve` veya benzeri girişler eşleşir. Eski `Galeriden seç` düğmesi, telefonun Fotoğraflar uygulamasını açtığını netleştirmek için `Fotoğraflardan seç` olarak yeniden adlandırıldı.
+
+Arşiv yalnızca uygulamanın cihaz içindeki özel klasöründe tutulur; bir sunucuya yüklenmez ve telefonun Fotoğraflar albümünde yeni kopya oluşturmaz. Uygulama kaldırılırsa arşiv de silinir. Bu sürümden önce taranan kartlar geriye dönük eklenmez; gerekirse Fotoğraflardan seç ile yeniden okutulmalıdır.
+
+iOS `ITSAppUsesNonExemptEncryption=false` bilgisi eklendi; uygulama özel veya ihracat izni gerektiren şifreleme uygulamadığı için sonraki TestFlight yüklemelerinde eksik uyumluluk sorusunun yeniden çıkması önlenir. Sürüm 1.3.0, build 13'tür.

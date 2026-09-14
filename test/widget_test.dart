@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kartvizit_cep/main.dart';
+import 'package:kartvizit_cep/models/card_data.dart';
 
 void main() {
   testWidgets('Elle giriş kişi kartını açar', (tester) async {
@@ -28,5 +29,42 @@ void main() {
     await tester.scrollUntilVisible(work, 150, scrollable: pageScroll());
     expect(work, findsOneWidget);
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('Ana ekran telefon fotoğrafları ile uygulama arşivini ayırır', (tester) async {
+    await tester.pumpWidget(const KartvizitApp());
+    Finder pageScroll() => find.descendant(
+      of: find.byType(ListView),
+      matching: find.byType(Scrollable),
+    ).first;
+    final gallery = find.text('Kartvizit Galerisi');
+    await tester.scrollUntilVisible(gallery, 200, scrollable: pageScroll());
+    expect(find.text('Fotoğraflardan seç'), findsOneWidget);
+    expect(gallery, findsOneWidget);
+    expect(find.text('Galeriden seç'), findsNothing);
+  });
+
+  testWidgets('Galeri bilgileri rehbere eklemeden güncellenebilir', (tester) async {
+    CardData? updated;
+    await tester.pumpWidget(MaterialApp(home: EditPage(
+      data: CardData(name: 'Ali Şahin'),
+      onDataChanged: (data) async {
+        updated = data;
+      },
+    )));
+
+    await tester.enterText(find.widgetWithText(TextFormField, 'Şirket'), 'Eren Group');
+    Finder pageScroll() => find.descendant(
+      of: find.byType(ListView),
+      matching: find.byType(Scrollable),
+    ).first;
+    final updateButton = find.text('Galeri bilgilerini güncelle');
+    await tester.scrollUntilVisible(updateButton, 250, scrollable: pageScroll());
+    await tester.tap(updateButton);
+    await tester.pump();
+
+    expect(updated?.name, 'Ali Şahin');
+    expect(updated?.company, 'Eren Group');
+    expect(find.text('Galeri bilgileri güncellendi.'), findsOneWidget);
   });
 }

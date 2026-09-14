@@ -5,6 +5,8 @@ import 'package:flutter_contacts/flutter_contacts.dart';
 import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 import 'package:image_picker/image_picker.dart';
 import 'models/card_data.dart';
+import 'models/archived_card.dart';
+import 'services/card_archive_service.dart';
 import 'services/card_parser.dart';
 import 'screens/crop_page.dart';
 import 'widgets/vivid_button.dart';
@@ -38,6 +40,7 @@ class HomePage extends StatefulWidget {
 }
 class _HomePageState extends State<HomePage> {
   final _picker = ImagePicker();
+  final _archive = CardArchiveService();
   bool _busy = false;
   @override void initState() { super.initState(); WidgetsBinding.instance.addPostFrameCallback((_) => _recover()); }
   void _message(String text) { if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(text))); }
@@ -89,8 +92,28 @@ class _HomePageState extends State<HomePage> {
       final result = await reader.processImage(InputImage.fromFilePath(file.path));
       if (!mounted) return;
       if (result.text.trim().isEmpty) { _message('Yazı bulunamadı. Fotoğrafı yakından ve net çekin.'); return; }
+      final data = CardParser().parse(result.text);
+      String previewPath = file.path;
+      ArchivedCard? archivedCard;
+      try {
+        archivedCard = await _archive.saveScan(
+          sourceImagePath: file.path,
+          data: data,
+          rawText: result.text,
+        );
+        previewPath = archivedCard.imagePath;
+      } catch (_) {
+        _message('Kartvizit okundu fakat uygulama arşivine kaydedilemedi.');
+      }
+      if (!mounted) return;
       await Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => EditPage(
-        data: CardParser().parse(result.text), raw: result.text, imagePath: file.path)));
+        data: data,
+        raw: result.text,
+        imagePath: previewPath,
+        onDataChanged: archivedCard == null
+            ? null
+            : (updated) => _archive.updateCardData(archivedCard!.id, updated),
+      )));
     } finally { await reader.close(); }
   }
   @override Widget build(BuildContext context) => Scaffold(
@@ -110,7 +133,16 @@ class _HomePageState extends State<HomePage> {
         const SizedBox(height: 28),
         VividButton(onPressed: _busy ? null : () => _scan(ImageSource.camera), icon: Icons.camera_alt_rounded, label: 'Kartvizit tara', colors: const [Color(0xFF087D95), Color(0xFF1565B5)]),
         const SizedBox(height: 12),
-        VividButton(onPressed: _busy ? null : () => _scan(ImageSource.gallery), icon: Icons.photo_library_rounded, label: 'Galeriden seç', colors: const [Color(0xFF873ABC), Color(0xFFBC286F)]),
+        VividButton(onPressed: _busy ? null : () => _scan(ImageSource.gallery), icon: Icons.photo_library_rounded, label: 'Fotoğraflardan seç', colors: const [Color(0xFF873ABC), Color(0xFFBC286F)]),
+        const SizedBox(height: 12),
+        VividButton(
+          onPressed: _busy ? null : () => Navigator.of(context).push(MaterialPageRoute<void>(
+            builder: (_) => ArchivePage(service: _archive),
+          )),
+          icon: Icons.collections_bookmark_rounded,
+          label: 'Kartvizit Galerisi',
+          colors: const [Color(0xFF137A5C), Color(0xFF45A049)],
+        ),
         const SizedBox(height: 12),
         VividButton(onPressed: _busy ? null : () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => EditPage(data: CardData()))), icon: Icons.edit_note_rounded, label: 'Bilgileri elle gir', colors: const [Color(0xFFAB590E), Color(0xFFBA3E31)]),
         if (_busy) const Padding(padding: EdgeInsets.all(20), child: Column(children: [CircularProgressIndicator(), SizedBox(height: 12), Text('Kartvizit okunuyor…')])),
@@ -125,11 +157,230 @@ class _HomePageState extends State<HomePage> {
   );
 }
 
+class ArchivePage extends StatefulWidget {
+  final CardArchiveService service;
+  const ArchivePage({super.key, required this.service});
+
+  @override
+  State<ArchivePage> createState() => _ArchivePageState();
+}
+
+class _ArchivePageState extends State<ArchivePage> {
+  late Future<List<ArchivedCard>> _cards;
+  final _searchController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _reload();
+    _searchController.addListener(_onSearchChanged);
+  }
+
+  void _onSearchChanged() {
+    if (mounted) setState(() {});
+  }
+
+  @override
+  void dispose() {
+    _searchController
+      ..removeListener(_onSearchChanged)
+      ..dispose();
+    super.dispose();
+  }
+
+  void _reload() => _cards = widget.service.loadCards();
+
+  String _date(DateTime value) {
+    String two(int number) => number.toString().padLeft(2, '0');
+    return '${two(value.day)}.${two(value.month)}.${value.year}  ${two(value.hour)}:${two(value.minute)}';
+  }
+
+  String _searchKey(String value) {
+    var result = value
+        .replaceAll('İ', 'i')
+        .replaceAll('I', 'i')
+        .toLowerCase();
+    const replacements = {
+      'ç': 'c',
+      'ğ': 'g',
+      'ı': 'i',
+      'ö': 'o',
+      'ş': 's',
+      'ü': 'u',
+    };
+    for (final entry in replacements.entries) {
+      result = result.replaceAll(entry.key, entry.value);
+    }
+    return result.trim();
+  }
+
+  Future<void> _open(ArchivedCard card) async {
+    await Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => EditPage(
+      data: card.data,
+      raw: card.rawText,
+      imagePath: card.imagePath,
+      onDataChanged: (updated) => widget.service.updateCardData(card.id, updated),
+    )));
+    if (mounted) setState(_reload);
+  }
+
+  Future<void> _delete(ArchivedCard card) async {
+    final approved = await showDialog<bool>(context: context, builder: (dialogContext) => AlertDialog(
+      title: const Text('Kartviziti arşivden sil'),
+      content: Text('${card.data.name.isNotEmpty ? card.data.name : card.data.company}\n\nBu işlem yalnızca uygulama arşivindeki fotoğrafı siler. Rehber kaydı etkilenmez.'),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: const Text('Vazgeç')),
+        FilledButton(onPressed: () => Navigator.pop(dialogContext, true), child: const Text('Sil')),
+      ],
+    ));
+    if (approved != true) return;
+    await widget.service.deleteCard(card);
+    if (mounted) setState(_reload);
+  }
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+    appBar: AppBar(title: const Text('Kartvizit Galerisi')),
+    body: SafeArea(child: Center(child: ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: 700),
+      child: FutureBuilder<List<ArchivedCard>>(
+        future: _cards,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState != ConnectionState.done) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (snapshot.hasError) {
+            return const Center(child: Padding(
+              padding: EdgeInsets.all(28),
+              child: Text('Kartvizit arşivi açılamadı.'),
+            ));
+          }
+          final allCards = snapshot.data ?? const <ArchivedCard>[];
+          if (allCards.isEmpty) {
+            return const Center(child: Padding(
+              padding: EdgeInsets.all(28),
+              child: Column(mainAxisSize: MainAxisSize.min, children: [
+                Icon(Icons.collections_bookmark_outlined, size: 76, color: Color(0xFF6550C7)),
+                SizedBox(height: 20),
+                Text('Arşiv henüz boş', style: TextStyle(fontSize: 25, fontWeight: FontWeight.bold)),
+                SizedBox(height: 10),
+                Text('Taradığın kartvizitler otomatik olarak burada saklanır.', textAlign: TextAlign.center),
+              ]),
+            ));
+          }
+          final query = _searchKey(_searchController.text);
+          final cards = query.isEmpty
+              ? allCards
+              : allCards.where((card) =>
+                  _searchKey(card.data.name).contains(query) ||
+                  _searchKey(card.data.company).contains(query)).toList();
+          return Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(18, 18, 18, 6),
+                child: TextField(
+                  controller: _searchController,
+                  textInputAction: TextInputAction.search,
+                  decoration: InputDecoration(
+                    hintText: 'Ad soyad veya şirket ara',
+                    prefixIcon: const Icon(Icons.search_rounded),
+                    suffixIcon: _searchController.text.isEmpty
+                        ? null
+                        : IconButton(
+                            tooltip: 'Aramayı temizle',
+                            onPressed: _searchController.clear,
+                            icon: const Icon(Icons.close_rounded),
+                          ),
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(22, 6, 22, 4),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    query.isEmpty ? '${allCards.length} kartvizit' : '${cards.length} sonuç',
+                    style: const TextStyle(color: Color(0xFF62647A), fontWeight: FontWeight.w600),
+                  ),
+                ),
+              ),
+              Expanded(
+                child: cards.isEmpty
+                    ? const Center(child: Padding(
+                        padding: EdgeInsets.all(28),
+                        child: Column(mainAxisSize: MainAxisSize.min, children: [
+                          Icon(Icons.search_off_rounded, size: 64, color: Color(0xFF777A91)),
+                          SizedBox(height: 14),
+                          Text('Eşleşen kartvizit bulunamadı',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(fontSize: 21, fontWeight: FontWeight.bold)),
+                        ]),
+                      ))
+                    : ListView.separated(
+                        padding: const EdgeInsets.fromLTRB(18, 8, 18, 22),
+                        itemCount: cards.length,
+                        separatorBuilder: (context, index) => const SizedBox(height: 14),
+                        itemBuilder: (context, index) {
+                          final card = cards[index];
+                          final title = card.data.name.isNotEmpty ? card.data.name : card.data.company;
+                          final subtitle = card.data.name.isNotEmpty && card.data.company.isNotEmpty
+                              ? card.data.company
+                              : 'Kartvizit kaydı';
+                          return Card(
+                            elevation: 2,
+                            clipBehavior: Clip.antiAlias,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+                            child: InkWell(
+                              onTap: () => _open(card),
+                              child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                                Container(
+                                  color: const Color(0xFFE9EBF7),
+                                  height: 180,
+                                  child: Image.file(
+                                    File(card.imagePath),
+                                    fit: BoxFit.contain,
+                                    errorBuilder: (context, error, stackTrace) =>
+                                        const Icon(Icons.broken_image_outlined, size: 56),
+                                  ),
+                                ),
+                                ListTile(
+                                  contentPadding: const EdgeInsets.fromLTRB(18, 8, 8, 8),
+                                  title: Text(title.isEmpty ? 'İsimsiz kartvizit' : title,
+                                    style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                                  subtitle: Text('$subtitle\n${_date(card.createdAt)}'),
+                                  isThreeLine: true,
+                                  trailing: IconButton(
+                                    tooltip: 'Arşivden sil',
+                                    onPressed: () => _delete(card),
+                                    icon: const Icon(Icons.delete_outline_rounded, color: Color(0xFFB43B45)),
+                                  ),
+                                ),
+                              ]),
+                            ),
+                          );
+                        },
+                      ),
+              ),
+            ],
+          );
+        },
+      ),
+    ))),
+  );
+}
+
 class EditPage extends StatefulWidget {
   final CardData data;
   final String raw;
   final String? imagePath;
-  const EditPage({super.key, required this.data, this.raw = '', this.imagePath});
+  final Future<void> Function(CardData data)? onDataChanged;
+  const EditPage({
+    super.key,
+    required this.data,
+    this.raw = '',
+    this.imagePath,
+    this.onDataChanged,
+  });
   @override State<EditPage> createState() => _EditPageState();
 }
 class _EditPageState extends State<EditPage> {
@@ -147,21 +398,50 @@ class _EditPageState extends State<EditPage> {
   @override void dispose() { for (final c in _fields) { c.dispose(); } super.dispose(); }
   String _v(int i) => _fields[i].text.trim();
   void _message(String s) { if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(s))); }
-  Future<void> _save() async {
-    if (_saving || _savedId != null || !_form.currentState!.validate()) return;
-    if (_v(0).isEmpty && _v(1).isEmpty) { _message('Ad soyad veya şirket adı girin.'); return; }
+  CardData? _currentData({required bool requireContactDetails}) {
+    if (!_form.currentState!.validate()) return null;
+    if (_v(0).isEmpty && _v(1).isEmpty) { _message('Ad soyad veya şirket adı girin.'); return null; }
     final kinds = <String, PhoneKind>{};
     for (final entry in {3: PhoneKind.mobile, 7: PhoneKind.work, 8: PhoneKind.other}.entries) {
       for (final line in _v(entry.key).split('\n').where((s) => s.trim().isNotEmpty)) {
         final number = normalizePhone(line);
-        if (kinds.containsKey(number)) { _message('Aynı numarayı yalnızca bir telefon alanına yazın.'); return; }
+        if (kinds.containsKey(number)) { _message('Aynı numarayı yalnızca bir telefon alanına yazın.'); return null; }
         kinds[number] = entry.value;
       }
     }
     final phones = kinds.keys.toList();
-    if (phones.isEmpty && _v(4).isEmpty) { _message('En az bir telefon veya e-posta girin.'); return; }
+    if (requireContactDetails && phones.isEmpty && _v(4).isEmpty) {
+      _message('En az bir telefon veya e-posta girin.');
+      return null;
+    }
+    return CardData(name: _v(0), company: _v(1), title: _v(2), phones: phones,
+      phoneKinds: kinds, email: _v(4), website: _v(5), address: _v(6));
+  }
+  Future<void> _saveToGallery() async {
+    if (_saving || widget.onDataChanged == null) return;
+    final data = _currentData(requireContactDetails: false);
+    if (data == null) return;
     setState(() => _saving = true);
     try {
+      await widget.onDataChanged!(data);
+      _message('Galeri bilgileri güncellendi.');
+    } catch (_) {
+      _message('Galeri bilgileri güncellenemedi. Tekrar deneyin.');
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+  Future<void> _save() async {
+    if (_saving || _savedId != null) return;
+    final data = _currentData(requireContactDetails: true);
+    if (data == null) return;
+    setState(() => _saving = true);
+    try {
+      try {
+        await widget.onDataChanged?.call(data);
+      } catch (_) {
+        _message('Düzeltilen bilgiler arşive kaydedilemedi; rehber kaydına devam ediliyor.');
+      }
       final permission = await FlutterContacts.permissions.request(PermissionType.readWrite);
       if (!mounted) return;
       if (permission != PermissionStatus.granted) {
@@ -171,7 +451,7 @@ class _EditPageState extends State<EditPage> {
             TextButton(onPressed: () { Navigator.pop(ctx); FlutterContacts.permissions.openSettings(); }, child: const Text('Ayarları aç'))]));
         return;
       }
-      final keys = phones.map(phoneKey).toSet();
+      final keys = data.phones.map(phoneKey).toSet();
       final all = await FlutterContacts.getAll(properties: {ContactProperty.phone, ContactProperty.email});
       final matches = all.where((c) => c.phones.any((p) => keys.contains(phoneKey(p.number))) ||
         (_v(4).isNotEmpty && c.emails.any((e) => e.address.toLowerCase() == _v(4).toLowerCase()))).toList();
@@ -185,7 +465,6 @@ class _EditPageState extends State<EditPage> {
         if (action == 'edit') { await _editExistingContact(matches.first.id!); return; }
         if (action != 'new') return;
       }
-      final data = CardData(name: _v(0), company: _v(1), title: _v(2), phones: phones, phoneKinds: kinds, email: _v(4), website: _v(5), address: _v(6));
       final contacts = FlutterContacts.vCard.import(data.toVCard());
       if (contacts.length != 1) throw StateError('Invalid contact');
       final id = await FlutterContacts.create(contacts.single);
@@ -218,7 +497,23 @@ class _EditPageState extends State<EditPage> {
         FilledButton(onPressed: () async { try { await FlutterContacts.native.showViewer(_savedId!); } catch (_) { _message('Rehber açılamadı. Telefonun Kişiler uygulamasından kontrol edebilirsiniz.'); } }, child: const Text('Rehberde göster')),
         TextButton(onPressed: () => Navigator.pop(context), child: const Text('Yeni kartvizit tara')),
       ]) : Form(key: _form, child: ListView(padding: const EdgeInsets.all(20), children: [
-        if (widget.imagePath != null) ClipRRect(borderRadius: BorderRadius.circular(18), child: Image.file(File(widget.imagePath!), height: 170, fit: BoxFit.contain, errorBuilder: (_, _, _) => const Text('Fotoğraf önizlemesi açılamadı.'))),
+        if (widget.imagePath != null) ClipRRect(borderRadius: BorderRadius.circular(18), child: Image.file(File(widget.imagePath!), height: 170, fit: BoxFit.contain, errorBuilder: (context, error, stackTrace) => const Text('Fotoğraf önizlemesi açılamadı.'))),
+        if (widget.onDataChanged != null) Container(
+          margin: const EdgeInsets.only(top: 16),
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: const Color(0xFFE5F3EF),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: const Row(children: [
+            Icon(Icons.collections_bookmark_rounded, color: Color(0xFF137A5C)),
+            SizedBox(width: 10),
+            Expanded(child: Text(
+              'Bu kart uygulama galerisinde saklanıyor. Rehbere yalnızca aşağıdaki düğmeyle eklenir.',
+              style: TextStyle(color: Color(0xFF164E45), fontWeight: FontWeight.w600),
+            )),
+          ]),
+        ),
         const Padding(padding: EdgeInsets.symmetric(vertical: 20), child: Text('Otomatik doldurulan alanlar tahmindir. Özellikle isim ve telefonları kontrol edin.')),
         for (final i in [0, 1, 2, 3, 7, 8, 4, 5, 6]) Padding(padding: const EdgeInsets.only(bottom: 16), child: TextFormField(
           controller: _fields[i], enabled: !_saving, style: const TextStyle(fontSize: 18),
@@ -232,7 +527,17 @@ class _EditPageState extends State<EditPage> {
             return null;
           })),
         if (widget.raw.isNotEmpty) ExpansionTile(title: const Text('Kartvizitte okunan tüm metin'), children: [Padding(padding: const EdgeInsets.all(16), child: SelectableText(widget.raw))]),
-        const SizedBox(height: 20), VividButton(onPressed: _saving ? null : _save, icon: Icons.person_add_alt_1, label: _saving ? 'Kaydediliyor…' : 'Rehbere kaydet'),
+        const SizedBox(height: 20),
+        if (widget.onDataChanged != null) ...[
+          OutlinedButton.icon(
+            style: OutlinedButton.styleFrom(minimumSize: const Size(double.infinity, 56)),
+            onPressed: _saving ? null : _saveToGallery,
+            icon: const Icon(Icons.save_rounded),
+            label: const Text('Galeri bilgilerini güncelle', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600)),
+          ),
+          const SizedBox(height: 12),
+        ],
+        VividButton(onPressed: _saving ? null : _save, icon: Icons.person_add_alt_1, label: _saving ? 'Kaydediliyor…' : 'Rehbere kaydet'),
         const SizedBox(height: 24),
       ])),
     ))),
