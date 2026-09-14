@@ -7,6 +7,7 @@ import 'package:image_picker/image_picker.dart';
 import 'models/card_data.dart';
 import 'models/archived_card.dart';
 import 'services/card_archive_service.dart';
+import 'services/contact_merge_service.dart';
 import 'services/card_parser.dart';
 import 'screens/crop_page.dart';
 import 'widgets/vivid_button.dart';
@@ -458,11 +459,13 @@ class _EditPageState extends State<EditPage> {
       if (!mounted) return;
       if (matches.isNotEmpty) {
         final action = await showDialog<String>(context: context, builder: (ctx) => AlertDialog(
-          title: const Text('Bu kişi rehberde olabilir'), content: const Text('Aynı telefon veya e-posta bulundu. Mevcut kişiyi açıp düzenleyebilir ya da ayrı kayıt oluşturabilirsiniz.'),
+          title: const Text('Bu kişi rehberde olabilir'), content: const Text('Aynı telefon veya e-posta bulundu. Kartvizitteki eksik bilgileri mevcut kişiye ekleyebilir, kişiyi olduğu gibi açabilir ya da ayrı kayıt oluşturabilirsiniz.'),
           actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Vazgeç')),
             TextButton(onPressed: () => Navigator.pop(ctx, 'edit'), child: const Text('Mevcut kişiyi aç')),
+            TextButton(onPressed: () => Navigator.pop(ctx, 'merge'), child: const Text('Bilgileri mevcut kişiye ekle')),
             TextButton(onPressed: () => Navigator.pop(ctx, 'new'), child: const Text('Ayrı kayıt oluştur'))]));
         if (action == 'edit') { await _editExistingContact(matches.first.id!); return; }
+        if (action == 'merge') { await _mergeIntoExistingContact(matches.first.id!, data); return; }
         if (action != 'new') return;
       }
       final contacts = FlutterContacts.vCard.import(data.toVCard());
@@ -484,6 +487,36 @@ class _EditPageState extends State<EditPage> {
       });
     } catch (_) {
       _message('Mevcut kişi açılamadı. Rehber erişimini kontrol edip tekrar deneyin.');
+    }
+  }
+  Future<void> _mergeIntoExistingContact(String id, CardData data) async {
+    try {
+      final existing = await FlutterContacts.get(
+        id,
+        properties: const {
+          ContactProperty.name,
+          ContactProperty.phone,
+          ContactProperty.email,
+          ContactProperty.address,
+          ContactProperty.organization,
+          ContactProperty.website,
+        },
+      );
+      if (existing == null) throw StateError('Contact not found');
+      final imported = FlutterContacts.vCard.import(data.toVCard());
+      if (imported.length != 1) throw StateError('Invalid contact');
+
+      final merged = mergeContactKeepingExisting(existing, imported.single);
+      await FlutterContacts.update(merged);
+      final editedId = await FlutterContacts.native.showEditor(id);
+      if (!mounted) return;
+      setState(() {
+        _savedId = editedId ?? id;
+        _openedExisting = true;
+      });
+      _message('Kartvizit bilgileri mevcut kişiye eklendi.');
+    } catch (_) {
+      _message('Mevcut kişi güncellenemedi. Rehber erişimini kontrol edip tekrar deneyin.');
     }
   }
   @override Widget build(BuildContext context) => PopScope(canPop: !_saving, child: Scaffold(

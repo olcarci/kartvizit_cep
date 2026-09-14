@@ -1,4 +1,4 @@
-# Kartvizit Cep v1.3.0 — Uygulama içi kartvizit galerisi
+# Kartvizit Cep v1.3.1 — Mevcut kişiye kartvizit bilgilerini ekleme
 
 ## Windows'ta uygulama
 1. Çalışan `flutter run` terminalinde q tuşuna basın.
@@ -23,12 +23,12 @@ Bilgisayarınızdaki net bir kartvizit JPG/PNG dosyasını emülatör penceresin
 2. Yanlış veya boş alanları düzeltin. Birden fazla telefon için her satıra bir numara yazın.
 3. Rehbere kaydet deyip rehber izni verin. Başarı ekranından Rehberde göster ile doğrulayın.
 4. Aynı kartı yeniden tarayın: mükerrer uyarısı beklenir. Vazgeç yeni kayıt oluşturmaz.
-5. Mevcut kişiyi aç, sistemin kişi düzenleme ekranını açar. Yeni taranan alanlar mevcut kişiye otomatik birleştirilmez; buradan elle düzenlenir. Birden fazla eşleşmede ilk kişi açılır.
+5. Mükerrer uyarısında `Bilgileri mevcut kişiye ekle` seçeneğini kullanın. Mevcut ad ve dolu alanlar korunur; kartvizitteki eksik telefon, e-posta, adres, şirket, unvan ve web sitesi eklenir. Ardından sistemin kişi düzenleme ekranı açılır. `Mevcut kişiyi aç` değişiklik yapmadan kişiyi açar; `Ayrı kayıt oluştur` yeni kişi oluşturur. Birden fazla eşleşmede ilk kişi kullanılır.
 6. Kamera/galeri seçiminden vazgeçme, boş fotoğraf ve rehber iznini reddetme durumlarını deneyin.
 7. Büyük sistem yazı boyutunda ekranı kaydırarak bütün alanlara erişilebildiğini kontrol edin.
 
 ## Kapsam ve sınırlamalar
-Kamera/telefon fotoğrafları, cihaz üzerinde Latin metin OCR, uygulama içi kartvizit galerisi, düzenlenebilir alanlar, çoklu telefon, izinli rehber kaydı, telefon/e-posta mükerrer kontrolü ve kayıt sonrası kişi görüntüleme bulunur. Türkçe telefonlar 0/+90/0090 biçimlerinde eşleştirilir. İsim, şirket, unvan ve adres ayırma kurallara dayalı tahmindir; her tasarımda doğru sonuç garanti edilmez. İnternetsiz OCR cihaz testi yapılmalıdır. Bulut eşitleme ve otomatik kişi birleştirme bu sürümde yoktur.
+Kamera/telefon fotoğrafları, cihaz üzerinde Latin metin OCR, uygulama içi kartvizit galerisi, düzenlenebilir alanlar, çoklu telefon, izinli rehber kaydı, telefon/e-posta mükerrer kontrolü, mevcut kişiye eksik kartvizit bilgilerini ekleme ve kayıt sonrası kişi görüntüleme bulunur. Türkçe telefonlar 0/+90/0090 biçimlerinde eşleştirilir. İsim, şirket, unvan ve adres ayırma kurallara dayalı tahmindir; her tasarımda doğru sonuç garanti edilmez. İnternetsiz OCR cihaz testi yapılmalıdır. Bulut eşitleme yoktur.
 
 Taranan/kırpılan kartvizit fotoğrafı uygulamanın özel belge alanındaki kalıcı galeriye kopyalanır. Rehber kaydının Google/iCloud eşitlemesi telefonun kendi hesap ayarlarına bağlıdır. iOS sınırlı rehber izninde tüm rehberde mükerrer kontrolü mümkün olmadığından bu sürüm tam erişim ister.
 
@@ -143,3 +143,8 @@ Arşivin üstündeki arama alanı ad-soyad ve şirket adına göre anlık filtre
 Arşiv yalnızca uygulamanın cihaz içindeki özel klasöründe tutulur; bir sunucuya yüklenmez ve telefonun Fotoğraflar albümünde yeni kopya oluşturmaz. Uygulama kaldırılırsa arşiv de silinir. Bu sürümden önce taranan kartlar geriye dönük eklenmez; gerekirse Fotoğraflardan seç ile yeniden okutulmalıdır.
 
 iOS `ITSAppUsesNonExemptEncryption=false` bilgisi eklendi; uygulama özel veya ihracat izni gerektiren şifreleme uygulamadığı için sonraki TestFlight yüklemelerinde eksik uyumluluk sorusunun yeniden çıkması önlenir. Sürüm 1.3.0, build 13'tür.
+
+## v1.3.1 — Mevcut kişiyi kartvizit bilgileriyle güncelleme
+Mükerrer telefon veya e-posta bulunduğunda `Bilgileri mevcut kişiye ekle` seçeneği gösterilir. Uygulama mevcut kişiyi gerekli rehber alanlarıyla birlikte yeniden okur ve dolu mevcut bilgileri silmeden kartvizitteki yeni telefonları, e-postaları ve web sitelerini ekler. Mevcut adres boşsa kartvizit adresini ekler. Şirket veya unvan alanlarından eksik olanı tamamlar. Güncellemeden sonra iPhone/Android kişi düzenleme ekranı açılarak sonuç kontrol edilebilir.
+
+`Mevcut kişiyi aç` hiçbir otomatik değişiklik yapmaz. `Ayrı kayıt oluştur` kartvizit bilgileriyle ikinci bir kişi oluşturur. Rehberdeki fotoğraf, not, özel gün ve uygulamanın istemediği diğer alanlar okunup yazılmadığı için korunur. Sürüm 1.3.1, build 14'tür.
