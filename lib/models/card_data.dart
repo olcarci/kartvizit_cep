@@ -52,16 +52,27 @@ class CardData {
   static String escape(String s) => s.replaceAll('\\', '\\\\')
       .replaceAll('\r', '').replaceAll('\n', r'\n')
       .replaceAll(';', r'\;').replaceAll(',', r'\,');
-  String toVCard() => [
-    'BEGIN:VCARD', 'VERSION:3.0',
-    'N:;${escape(name.isEmpty ? company : name)};;;',
-    'FN:${escape(name.isEmpty ? company : name)}',
-    if (company.isNotEmpty) 'ORG:${escape(company)}',
-    if (title.isNotEmpty) 'TITLE:${escape(title)}',
-    for (final phone in phones) 'TEL;TYPE=${phoneType(phone)}:${escape(phone)}',
-    if (email.isNotEmpty) 'EMAIL;TYPE=WORK:${escape(email)}',
-    if (website.isNotEmpty) 'URL:${escape(website)}',
-    if (address.isNotEmpty) 'ADR;TYPE=WORK:;;${escape(address)};;;;',
-    'END:VCARD', '',
-  ].join('\r\n');
+  String toVCard() {
+    final displayName = name.isEmpty ? company : name;
+    final nameParts = name.trim().split(RegExp(r'\s+'));
+    final hasFamilyName = nameParts.length > 1;
+    final givenName = name.isEmpty
+        ? company
+        : (hasFamilyName
+            ? nameParts.sublist(0, nameParts.length - 1).join(' ')
+            : nameParts.first);
+    final familyName = hasFamilyName ? nameParts.last : '';
+    return [
+      'BEGIN:VCARD', 'VERSION:3.0',
+      'N:${escape(familyName)};${escape(givenName)};;;',
+      'FN:${escape(displayName)}',
+      if (company.isNotEmpty) 'ORG:${escape(company)}',
+      if (title.isNotEmpty) 'TITLE:${escape(title)}',
+      for (final phone in phones) 'TEL;TYPE=${phoneType(phone)}:${escape(phone)}',
+      if (email.isNotEmpty) 'EMAIL;TYPE=WORK:${escape(email)}',
+      if (website.isNotEmpty) 'URL:${escape(website)}',
+      if (address.isNotEmpty) 'ADR;TYPE=WORK:;;${escape(address)};;;;',
+      'END:VCARD', '',
+    ].join('\r\n');
+  }
 }

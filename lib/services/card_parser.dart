@@ -28,10 +28,10 @@ class CardParser {
   static final webPattern = RegExp(r'(?:https?://|www\.)[^\s,;]+', caseSensitive: false);
   static final phonePattern = RegExp(r'\+?\d[\d ()\-.]{7,}\d');
   static String fold(String s) => s.toLowerCase().replaceAll('i\u0307', 'i').replaceAll('ı', 'i').replaceAll('ş', 's').replaceAll('ğ', 'g').replaceAll('ü', 'u').replaceAll('ö', 'o').replaceAll('ç', 'c');
-  static final industry = RegExp(r'\b(ltd|sti|a\.s|limited|sirket|dogalgaz|insaat|mekanik|teknoloji|yazilim|ticaret|sanayi|otomotiv)\b');
+  static final industry = RegExp(r'\b(ltd|sti|a\.s|limited|sirket|dogalgaz|insaat|mekanik|teknoloji|yazilim|ticaret|sanayi|otomotiv|faktoring)\b');
   // The folded string has the same character positions for these Turkish letters.
   static final titlePattern = RegExp(
-    r'\b(?:(?:makine|makina|insaat|elektrik(?:\s+elektronik)?|bilgisayar|yazilim)\s+(?:muhendisi|muhendis|muh\.?)|(?:satis|pazarlama|genel|bolge|proje)\s+(?:muduru|yoneticisi|uzmani|danismani)|muhendisi|muhendis|muduru|mudur|yonetici|danisman|uzman|direktor|manager|engineer|director|ceo)(?![a-z])');
+    r'\b(?:(?:makine|makina|insaat|elektrik(?:\s+elektronik)?|bilgisayar|yazilim)\s+(?:muhendisi|muhendis|muh\.?)|(?:satis|pazarlama|genel|bolge|proje|portfoy)\s+(?:muduru|yoneticisi|uzmani|danismani|yetkilisi)|muhendisi|muhendis|muduru|mudur|yonetici|danisman|uzman|yetkilisi|direktor|manager|engineer|director|ceo)(?![a-z])');
   // Only change zero inside an otherwise alphabetic name token.
   // Raw OCR remains visible for review; actual phone digits are never changed.
   static String repairName(String value) => value.split(RegExp(r'\s+')).map((token) {
@@ -45,7 +45,34 @@ class CardParser {
   static bool _nameLike(String s) {
     final words = s.split(RegExp(r'\s+'));
     return words.length >= 2 && words.length <= 5 && !RegExp(r'[\d:@/]').hasMatch(s)
-      && !RegExp(r'\b(yetkili|bayi|bayii|servis|cozum|cozumleri)\b').hasMatch(fold(s));
+      && !RegExp(r'\b(yetkili|yetkilisi|bayi|bayii|servis|cozum|cozumleri|sube|subesi)\b').hasMatch(fold(s));
+  }
+  static bool _industryLike(String value) {
+    final normalized = fold(value);
+    final compact = normalized.replaceAll(RegExp(r'\s+'), '');
+    return industry.hasMatch(normalized)
+        || compact.contains('faktoring')
+        || compact.contains('faktorin');
+  }
+  static String repairCompany(String value) {
+    var repaired = value.trim();
+    final parts = repaired.split(RegExp(r'\s+'));
+    if (parts.length >= 4 && fold(parts.first).length == 1
+        && fold(parts[1]).startsWith(fold(parts.first))) {
+      repaired = parts.skip(1).join(' ');
+    }
+    final splitFaktoring = RegExp(
+      r'\bfakto\s+r[iİıI]n[gG]?\b',
+      caseSensitive: false,
+    );
+    if (splitFaktoring.hasMatch(repaired)) {
+      final allUppercase = repaired == repaired.toUpperCase();
+      repaired = repaired.replaceAll(
+        splitFaktoring,
+        allUppercase ? 'FAKTORİNG' : 'Faktoring',
+      );
+    }
+    return repaired;
   }
   static String _compactLogo(String s) {
     final parts = s.split(RegExp(r'\s+'));
@@ -89,7 +116,7 @@ class CardParser {
         }
       }
       if (mail != null || web != null || hasPhone) continue;
-      if (industry.hasMatch(lower) && titlePattern.firstMatch(lower) == null) {
+      if (_industryLike(line) && titlePattern.firstMatch(lower) == null) {
         if (data.company.isEmpty) {
           var company = line;
           // A single-word brand followed by a separate industry line.
@@ -101,7 +128,7 @@ class CardParser {
               names.remove(previous);
             }
           }
-          data.company = company;
+          data.company = repairCompany(company);
         }
         continue;
       }

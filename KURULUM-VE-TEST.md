@@ -1,4 +1,4 @@
-# Kartvizit Cep v1.3.1 — Mevcut kişiye kartvizit bilgilerini ekleme
+# Kartvizit Cep v1.3.3 — Şirket temizleme ve ad-soyad ayrımı
 
 ## Windows'ta uygulama
 1. Çalışan `flutter run` terminalinde q tuşuna basın.
@@ -148,3 +148,9 @@ iOS `ITSAppUsesNonExemptEncryption=false` bilgisi eklendi; uygulama özel veya i
 Mükerrer telefon veya e-posta bulunduğunda `Bilgileri mevcut kişiye ekle` seçeneği gösterilir. Uygulama mevcut kişiyi gerekli rehber alanlarıyla birlikte yeniden okur ve dolu mevcut bilgileri silmeden kartvizitteki yeni telefonları, e-postaları ve web sitelerini ekler. Mevcut adres boşsa kartvizit adresini ekler. Şirket veya unvan alanlarından eksik olanı tamamlar. Güncellemeden sonra iPhone/Android kişi düzenleme ekranı açılarak sonuç kontrol edilebilir.
 
 `Mevcut kişiyi aç` hiçbir otomatik değişiklik yapmaz. `Ayrı kayıt oluştur` kartvizit bilgileriyle ikinci bir kişi oluşturur. Rehberdeki fotoğraf, not, özel gün ve uygulamanın istemediği diğer alanlar okunup yazılmadığı için korunur. Sürüm 1.3.1, build 14'tür.
+
+## v1.3.2 — Faktoring kartlarında alan ayrımı
+Aralıklı okunabilen `FAKTO RİNG` ifadesi şirket göstergesi olarak tanınır. `Portföy Yetkilisi` unvan olarak ayrılır ve şube satırları kişi adı adayı sayılmaz. Böylece örnek kartta `ŞİRİNOĞLU FAKTO RİNG` şirket, `Eren Çevik` ad-soyad ve `Portföy Yetkilisi` unvan alanına yerleşir. Sürüm 1.3.2, build 15'tir.
+
+## v1.3.3 — Logo harfi temizleme ve rehber adı ayrımı
+Şirket adının başında logodan gelen, şirketin ilk harfini tekrarlayan tek harflik OCR artığı temizlenir. `FAKTO RİNG` yazımı `FAKTORİNG` olarak birleştirilir. Rehbere aktarımda kişi adının son kelimesi soyad, önceki kelimeleri ad alanına yazılır; örneğin `Eren Çevik`, Android/iOS rehberinde ad `Eren`, soyad `Çevik` olur. Sürüm 1.3.3, build 16'dır.

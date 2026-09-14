@@ -40,6 +40,36 @@ void main() {
     expect(d.name, 'Olgun Berk Ayyıldız');
     expect(d.title, 'Satış Müdürü');
   });
+  test('Faktoring kartında şirket kişi ve portföy unvanı ayrılır', () {
+    final d = CardParser().parse(
+      'ŞİRİNOĞLU FAKTO RIN\n'
+      'Eren Çevik\n'
+      'Portföy Yetkilisi\n'
+      'Sivas Şubesi\n'
+      'Sularbaşı Mahallesi Kızılay Sokak Gül Apt. Altı No-5/D Sivas\n'
+      'T: 0346 225 2035 F: 0346 225 2038\n'
+      'M: 0530 108 25 10\n'
+      'eren.cevik@sirinoglu.com\n'
+      'www.sirinoglu.com',
+    );
+    expect(d.company, 'ŞİRİNOĞLU FAKTORİNG');
+    expect(d.name, 'Eren Çevik');
+    expect(d.title, 'Portföy Yetkilisi');
+    expect(d.phoneKinds['+905301082510'], PhoneKind.mobile);
+    expect(d.phoneKinds['+903462252035'], PhoneKind.work);
+    expect(d.email, 'eren.cevik@sirinoglu.com');
+    expect(d.website, 'www.sirinoglu.com');
+  });
+  test('Şirket adındaki logo harfi ve eksik G onarılır', () {
+    expect(
+      CardParser.repairCompany('S ŞİRİNOĞLU FAKTO RİNG'),
+      'ŞİRİNOĞLU FAKTORİNG',
+    );
+    expect(
+      CardParser.repairCompany('ŞİRİNOĞLU FAKTO RIN'),
+      'ŞİRİNOĞLU FAKTORİNG',
+    );
+  });
   test('Açık yabancı ülke kodları Türkiye numarasına çevrilmez', () {
     expect(normalizePhone('+32 123 45 678'), '+3212345678');
     expect(normalizePhone('0049 30 12345678'), '+493012345678');
@@ -70,5 +100,10 @@ void main() {
     final card = CardData(name: 'Ali\nTEL:999', company: 'A;B').toVCard();
     expect(card, contains(r'A\;B'));
     expect(card, isNot(contains('\r\nTEL:999')));
+  });
+  test('vCard ad ve soyadı rehber alanlarına ayrı yazar', () {
+    final card = CardData(name: 'Eren Çevik').toVCard();
+    expect(card, contains('N:Çevik;Eren;;;'));
+    expect(card, contains('FN:Eren Çevik'));
   });
 }
