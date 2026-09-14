@@ -1,4 +1,4 @@
-package com.example.kartvizit_cep
+package com.olcarci.kartvizitcep
 
 import io.flutter.embedding.android.FlutterActivity
 

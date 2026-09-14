@@ -1,4 +1,4 @@
-# Kartvizit Cep v1.2.0 — İlk geliştirme sürümü
+# Kartvizit Cep v1.2.1 — İlk geliştirme sürümü
 
 ## Windows'ta uygulama
 1. Çalışan `flutter run` terminalinde q tuşuna basın.
@@ -126,3 +126,8 @@ Doğrulama: Flutter SDK bu ortamda olmadığı için analyze, test ve cihaz derl
 Ana ekranın tanıtım kartına mor, mavi ve turkuaz geçiş eklendi. Kamera mavi, galeri mor/pembe, elle giriş turuncu/kiremit, kırpma ve rehbere kayıt yeşil geçişli butonlarla gösterilir. Butonlar gölgeli, geniş ve büyük yazılıdır. Devre dışı butonlar gri görünür. Arka plan açık lavanta, form alanları beyaz ve odak kenarları mordur. Son kontrol kartı mint rengindedir. İşlevler korunmuştur.
 
 Doğrulama: Flutter SDK burada olmadığı için analyze, test, ekran görüntüsü ve cihaz derlemesi çalıştırılamadı. Kullanıcı ortamında flutter pub get, flutter analyze, flutter test ve flutter run -d emulator-5554 ile doğrulayın. Ana ekran, kırpma ve formu kontrol edin.
+
+## v1.2.1 — Yayın kimliği
+Apple Developer ve App Store Connect üzerinde kaydedilen `com.olcarci.kartvizitcep` kimliği iOS Runner yapılandırmasına uygulandı. Android namespace ve applicationId de aynı kalıcı kimlikle eşleştirildi. RunnerTests kimliği `com.olcarci.kartvizitcep.RunnerTests` olarak güncellendi. Sürüm 1.2.1, derleme numarası 12 oldu.
+
+Bu kimlik değişikliği nedeniyle Android, emülatörde eski geliştirme uygulamasından ayrı bir uygulama olarak görünebilir. Flutter SDK bu ortamda bulunmadığından analyze, test ve Android/iOS derlemesi çalıştırılamadı. Yerelde `flutter pub get`, `flutter analyze`, `flutter test` ve `flutter run -d emulator-5554` komutlarını çalıştırın. Başarılı sonuçtan sonra güncellenen `pubspec.lock` dahil değişiklikleri GitHub'a gönderin; Codemagic Release iOS derlemesinde bu Bundle ID'yi kullanmalıdır.
