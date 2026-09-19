@@ -112,6 +112,7 @@ void main() {
       'E sivascadde@atasunoptik.com.tr',
     );
     expect(d.company, 'Atasun Optik');
+    expect(d.name, isEmpty); // "Sivas Cadde" is a branch label, not a person.
   });
   test('vCard ad ve soyadı rehber alanlarına ayrı yazar', () {
     final card = CardData(name: 'Eren Çevik').toVCard();
