@@ -45,7 +45,7 @@ class CardParser {
   static bool _nameLike(String s) {
     final words = s.split(RegExp(r'\s+'));
     return words.length >= 2 && words.length <= 5 && !RegExp(r'[\d:@/]').hasMatch(s)
-      && !RegExp(r'\b(yetkili|yetkilisi|bayi|bayii|servis|cozum|cozumleri|sube|subesi)\b').hasMatch(fold(s));
+      && !RegExp(r'\b(yetkili|yetkilisi|bayi|bayii|servis|cozum|cozumleri|sube|subesi|cadde|caddesi)\b').hasMatch(fold(s));
   }
   static bool _industryLike(String value) {
     final normalized = fold(value);
