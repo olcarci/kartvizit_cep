@@ -101,6 +101,18 @@ void main() {
     expect(card, contains(r'A\;B'));
     expect(card, isNot(contains('\r\nTEL:999')));
   });
+  test('Logoda tekrarlanan marka adı şirket olarak tanınır', () {
+    final d = CardParser().parse(
+      'Sivas Cadde\n'
+      'Atasun Optik\n'
+      'Atasun Optik\n'
+      'Örtülüpınar Mahallesi İnönü Bulvarı\n'
+      'No:25B Merkez/Sivas\n'
+      'T +90 541 203 31 86\n'
+      'E sivascadde@atasunoptik.com.tr',
+    );
+    expect(d.company, 'Atasun Optik');
+  });
   test('vCard ad ve soyadı rehber alanlarına ayrı yazar', () {
     final card = CardData(name: 'Eren Çevik').toVCard();
     expect(card, contains('N:Çevik;Eren;;;'));

@@ -82,6 +82,12 @@ class CardParser {
   CardData parse(String text) {
     final data = CardData();
     final lines = text.split(RegExp(r'[\r\n]+')).map((s) => _compactLogo(s.trim())).where((s) => s.isNotEmpty).toList();
+    // A line repeated verbatim (logo header + body, footer, etc.) is very
+    // likely the company/brand name rather than a person's name.
+    final lineCounts = <String, int>{};
+    for (final line in lines) {
+      lineCounts.update(fold(line), (v) => v + 1, ifAbsent: () => 1);
+    }
     final names = <String>[];
     final addresses = <String>[];
     final seen = <String>{};
@@ -146,8 +152,14 @@ class CardParser {
         if (_nameLike(repaired)) data.name = repaired;
         continue;
       }
+      if (fold(line) == fold(data.company)) continue;
       final repaired = repairName(line);
-      if (_nameLike(repaired)) names.add(repaired);
+      if (!_nameLike(repaired)) continue;
+      if (data.company.isEmpty && (lineCounts[lower] ?? 0) >= 2) {
+        data.company = repairCompany(line);
+      } else {
+        names.add(repaired);
+      }
     }
     if (data.name.isEmpty && names.isNotEmpty) data.name = names.first;
     data.address = addresses.join('\n');
