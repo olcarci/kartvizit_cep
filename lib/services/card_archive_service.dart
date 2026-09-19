@@ -15,6 +15,15 @@ class CardArchiveService {
   String _join(String first, String second) =>
       '$first${Platform.pathSeparator}$second';
 
+  // Eski kayıtlarda (ve bir güvenlik önlemi olarak her zaman) imagePath'in
+  // hangi cihaz/container'da kaydedildiğine bakılmaksızın sadece dosya adını
+  // döndürür; tam yol her seferinde geçerli (güncel) dizinle yeniden kurulur.
+  String _basename(String path) {
+    final normalized = path.replaceAll('\\', '/');
+    final segments = normalized.split('/').where((segment) => segment.isNotEmpty).toList();
+    return segments.isEmpty ? path : segments.last;
+  }
+
   Future<Directory> _archiveDirectory() async {
     final root = await _directoryProvider();
     final directory = Directory(_join(root.path, 'kartvizit_arsivi'));
@@ -31,10 +40,20 @@ class CardArchiveService {
     try {
       final decoded = jsonDecode(await file.readAsString());
       if (decoded is! List) return [];
+      final directory = await _archiveDirectory();
       final cards = decoded
           .whereType<Map>()
           .map((value) => ArchivedCard.fromJson(Map<String, dynamic>.from(value)))
           .where((card) => card.id.isNotEmpty && card.imagePath.isNotEmpty)
+          // Kayıtlı yol eski bir cihaz container'ından kalma olabilir; dosya
+          // adı alınıp güncel arşiv dizinine göre yeniden kurulur.
+          .map((card) => ArchivedCard(
+                id: card.id,
+                imagePath: _join(directory.path, _basename(card.imagePath)),
+                createdAt: card.createdAt,
+                data: card.data,
+                rawText: card.rawText,
+              ))
           .toList();
       cards.sort((a, b) => b.createdAt.compareTo(a.createdAt));
       return cards;
@@ -94,6 +113,13 @@ class CardArchiveService {
 
   Future<void> _writeCards(List<ArchivedCard> cards) async {
     final file = await _indexFile();
-    await file.writeAsString(jsonEncode(cards.map((card) => card.toJson()).toList()), flush: true);
+    // Diskte her zaman sadece dosya adı saklanır; bir sonraki cihaz/container
+    // değişiminde de tam yol loadCards() tarafından yeniden kurulabilsin diye.
+    final serializable = cards.map((card) {
+      final json = card.toJson();
+      json['imagePath'] = _basename(card.imagePath);
+      return json;
+    }).toList();
+    await file.writeAsString(jsonEncode(serializable), flush: true);
   }
 }

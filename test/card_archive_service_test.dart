@@ -35,4 +35,44 @@ void main() {
     expect(await service.loadCards(), isEmpty);
     expect(await File(saved.imagePath).exists(), isFalse);
   });
+
+  test('iOS güncellemesiyle container yolu değişse bile arşiv fotoğrafları bulunur', () async {
+    final oldRoot = await Directory.systemTemp.createTemp('kartvizit_old_container_');
+    final newRoot = await Directory.systemTemp.createTemp('kartvizit_new_container_');
+    addTearDown(() async {
+      for (final dir in [oldRoot, newRoot]) {
+        if (await dir.exists()) await dir.delete(recursive: true);
+      }
+    });
+
+    final image = File('${oldRoot.path}${Platform.pathSeparator}source.jpg');
+    await image.writeAsBytes([1, 2, 3, 4]);
+
+    var currentRoot = oldRoot;
+    final service = CardArchiveService(directoryProvider: () async => currentRoot);
+
+    final saved = await service.saveScan(
+      sourceImagePath: image.path,
+      data: CardData(name: 'Aycan Salık', company: 'Emir Kombi'),
+    );
+
+    // iOS güncellemesinde Documents klasörünün tüm içeriği (resim + JSON
+    // index) yeni container'a taşınır, sadece klasörün tam yolu değişir.
+    final oldArchiveDir = Directory('${oldRoot.path}${Platform.pathSeparator}kartvizit_arsivi');
+    final newArchiveDir = Directory('${newRoot.path}${Platform.pathSeparator}kartvizit_arsivi');
+    await newArchiveDir.create(recursive: true);
+    for (final entity in oldArchiveDir.listSync()) {
+      if (entity is File) {
+        final fileName = entity.uri.pathSegments.last;
+        await entity.copy('${newArchiveDir.path}${Platform.pathSeparator}$fileName');
+      }
+    }
+    await oldRoot.delete(recursive: true);
+    currentRoot = newRoot;
+
+    final cards = await service.loadCards();
+    expect(cards, hasLength(1));
+    expect(await File(cards.single.imagePath).exists(), isTrue,
+        reason: 'Eski container yoluna göre kaydedilmiş kart, güncel dizine göre yeniden çözülebilmeli.');
+  });
 }
