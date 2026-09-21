@@ -70,11 +70,15 @@ class _HomePageState extends State<HomePage> {
     if (_busy) return;
     setState(() => _busy = true);
     try {
-      final file = await _picker.pickImage(source: source, maxWidth: 2400, imageQuality: 95, requestFullMetadata: false);
+      final XFile? file;
+      try {
+        file = await _picker.pickImage(source: source, maxWidth: 2400, imageQuality: 95, requestFullMetadata: false);
+      } on PlatformException catch (e) {
+        _message('Fotoğrafa erişilemedi. Kamera/fotoğraf izinlerini telefon ayarlarından kontrol edin. (${e.code})');
+        return;
+      }
       if (file != null && mounted) await _cropAndRecognize(file);
-    } on PlatformException catch (e) {
-      _message('Fotoğrafa erişilemedi. Kamera/fotoğraf izinlerini telefon ayarlarından kontrol edin. (${e.code})');
-    } catch (_) { _message('Kartvizit okunamadı. Net ve iyi aydınlatılmış bir fotoğrafla tekrar deneyin.'); }
+    } catch (e) { _message('Kartvizit okunamadı. Net ve iyi aydınlatılmış bir fotoğrafla tekrar deneyin. ($e)'); }
     finally { if (mounted) setState(() => _busy = false); }
   }
   Future<void> _cropAndRecognize(XFile file) async {
