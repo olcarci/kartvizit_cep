@@ -55,6 +55,7 @@ void main() {
       sourceImagePath: image.path,
       data: CardData(name: 'Aycan Salık', company: 'Emir Kombi'),
     );
+    expect(saved.data.name, 'Aycan Salık');
 
     // iOS güncellemesinde Documents klasörünün tüm içeriği (resim + JSON
     // index) yeni container'a taşınır, sadece klasörün tam yolu değişir.

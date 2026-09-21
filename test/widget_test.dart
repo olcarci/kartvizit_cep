@@ -19,6 +19,8 @@ void main() {
     await tester.tap(manualEntry);
     await tester.pumpAndSettle();
     expect(find.text('Kişi bilgilerini kontrol et'), findsOneWidget);
+    final name = find.widgetWithText(TextFormField, 'Ad soyad');
+    await tester.scrollUntilVisible(name, 150, scrollable: pageScroll());
     expect(find.text('Ad soyad'), findsOneWidget);
 
     // Verify each field after scrolling it into view, even in a short viewport.
@@ -55,11 +57,16 @@ void main() {
       },
     )));
 
-    await tester.enterText(find.widgetWithText(TextFormField, 'Şirket'), 'Eren Group');
     Finder pageScroll() => find.descendant(
       of: find.byType(ListView),
       matching: find.byType(Scrollable),
     ).first;
+    final company = find.widgetWithText(TextFormField, 'Şirket');
+    await tester.scrollUntilVisible(company, 150, scrollable: pageScroll());
+    await tester.pumpAndSettle();
+    await tester.enterText(company, 'Eren Group');
+    tester.testTextInput.hide();
+    await tester.pumpAndSettle();
     final updateButton = find.text('Galeri bilgilerini güncelle');
     await tester.scrollUntilVisible(updateButton, 250, scrollable: pageScroll());
     await tester.tap(updateButton);

@@ -12,6 +12,7 @@ import 'services/card_parser.dart';
 import 'screens/crop_page.dart';
 import 'widgets/tech_background.dart';
 import 'widgets/vivid_button.dart';
+import 'widgets/contact_quick_actions.dart';
 
 void main() { WidgetsFlutterBinding.ensureInitialized(); runApp(const KartvizitApp()); }
 
@@ -552,6 +553,8 @@ class _EditPageState extends State<EditPage> {
         FilledButton(onPressed: () async { try { await FlutterContacts.native.showViewer(_savedId!); } catch (_) { _message('Rehber açılamadı. Telefonun Kişiler uygulamasından kontrol edebilirsiniz.'); } }, child: const Text('Rehberde göster')),
         TextButton(onPressed: () => Navigator.pop(context), child: const Text('Yeni kartvizit tara')),
       ]) : Form(key: _form, child: ListView(padding: const EdgeInsets.all(20), children: [
+        ContactQuickActions(fields: _fields),
+        const SizedBox(height: 16),
         if (widget.imagePath != null) TechPanel(padding: const EdgeInsets.all(10), child: ClipRRect(borderRadius: BorderRadius.circular(14), child: Image.file(File(widget.imagePath!), height: 170, fit: BoxFit.contain, errorBuilder: (context, error, stackTrace) => const Text('Fotoğraf önizlemesi açılamadı.')))),
         if (widget.onDataChanged != null) TechPanel(
           margin: const EdgeInsets.only(top: 16),
