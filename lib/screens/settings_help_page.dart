@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../services/app_version.dart';
+
 class SettingsHelpPage extends StatelessWidget {
   final VoidCallback onBackups;
   final VoidCallback onReminders;
@@ -107,7 +109,35 @@ class SettingsHelpPage extends StatelessWidget {
             ),
           ],
         ),
+        const SizedBox(height: 24),
+        const _VersionLine(),
       ],
     ),
+  );
+}
+
+/// Kurulu derlemenin sürümünü gösterir. Güncellemenin cihaza inip inmediğini
+/// ikona bakmadan doğrulamak için.
+class _VersionLine extends StatelessWidget {
+  const _VersionLine({super.key});
+
+  @override
+  Widget build(BuildContext context) => FutureBuilder<String?>(
+    future: AppVersion.load(),
+    builder: (context, snapshot) {
+      if (snapshot.connectionState != ConnectionState.done) {
+        return const SizedBox.shrink();
+      }
+      final version = snapshot.data;
+      return Center(
+        child: Text(
+          version == null
+              ? 'Sürüm bilgisi okunamadı'
+              : 'Kartvizit Cep $version',
+          textAlign: TextAlign.center,
+          style: Theme.of(context).textTheme.bodySmall,
+        ),
+      );
+    },
   );
 }
