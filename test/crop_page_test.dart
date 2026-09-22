@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:kartvizit_cep/widgets/ivory_button.dart';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -24,7 +25,7 @@ void main() {
     image.completeError(StateError('Fotoğraf açılamadı'));
     await tester.pumpAndSettle();
     expect(find.textContaining('Bu fotoğraf kırpma ekranında açılamadı'), findsOneWidget);
-    expect(tester.widget<FilledButton>(find.byType(FilledButton)).onPressed, isNull);
+    expect(tester.widget<IvoryButton>(find.byType(IvoryButton)).onPressed, isNull);
     await tester.tap(find.text('Kırpmadan devam et'));
     await tester.pumpAndSettle();
     expect(selection, isNotNull);

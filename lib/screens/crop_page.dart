@@ -4,6 +4,7 @@ import 'dart:ui' as ui;
 
 import 'package:crop_your_image/crop_your_image.dart';
 import 'package:flutter/material.dart';
+
 import '../widgets/tech_background.dart';
 import '../widgets/vivid_button.dart';
 
@@ -41,7 +42,9 @@ class _CropPageState extends State<CropPage> {
     try {
       final frame = await codec.getNextFrame();
       try {
-        final png = await frame.image.toByteData(format: ui.ImageByteFormat.png);
+        final png = await frame.image.toByteData(
+          format: ui.ImageByteFormat.png,
+        );
         if (png == null) throw StateError('Image conversion failed');
         return png.buffer.asUint8List(png.offsetInBytes, png.lengthInBytes);
       } finally {
@@ -57,10 +60,17 @@ class _CropPageState extends State<CropPage> {
     if (result is CropSuccess) {
       Navigator.of(context).pop(CropSelection.cropped(result.croppedImage));
     } else {
-      setState(() { _cropping = false; _ready = true; });
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text('Kırpma tamamlanamadı. Tekrar deneyin veya kırpmadan devam edin.'),
-      ));
+      setState(() {
+        _cropping = false;
+        _ready = true;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Kırpma tamamlanamadı. Tekrar deneyin veya kırpmadan devam edin.',
+          ),
+        ),
+      );
     }
   }
 
@@ -69,74 +79,120 @@ class _CropPageState extends State<CropPage> {
     canPop: !_cropping,
     child: Scaffold(
       appBar: AppBar(title: const Text('Kartviziti kırp')),
-      body: TechBackground(child: SafeArea(child: Column(children: [
-        const TechPanel(
-          margin: EdgeInsets.fromLTRB(16, 12, 16, 4),
-          padding: EdgeInsets.all(15),
-          child: Row(children: [
-            Icon(Icons.crop_free_rounded, color: Color(0xFF67F2C4)),
-            SizedBox(width: 12),
-            Expanded(child: Text('Köşeleri kartvizitin kenarlarına sürükle. Tüm yazılar çerçevenin içinde kalsın.')),
-          ]),
-        ),
-        Expanded(child: FutureBuilder<Uint8List>(
-          future: _image,
-          builder: (context, snapshot) {
-            if (snapshot.hasError) {
-              return const Center(child: Padding(
-                padding: EdgeInsets.all(24),
-                child: Text('Bu fotoğraf kırpma ekranında açılamadı. Kırpmadan devam edebilir veya başka bir fotoğraf seçebilirsin.'),
-              ));
-            }
-            if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
-            return Padding(
-              padding: const EdgeInsets.all(24),
-              child: Crop(
-              image: snapshot.data!,
-              controller: _controller,
-              interactive: false,
-              fixCropRect: false,
-              initialRectBuilder: InitialRectBuilder.withBuilder((viewport, image) =>
-                Rect.fromCenter(center: image.center,
-                  width: image.width * 0.75, height: image.height * 0.75)),
-              cornerDotBuilder: (size, alignment) => Container(
-                width: size, height: size,
-                decoration: BoxDecoration(
-                  color: const Color(0xFF00A8C6),
-                  border: Border.all(color: Colors.white, width: 3),
-                  borderRadius: BorderRadius.circular(8),
+      body: TechBackground(
+        child: SafeArea(
+          child: Column(
+            children: [
+              const TechPanel(
+                margin: EdgeInsets.fromLTRB(16, 12, 16, 4),
+                padding: EdgeInsets.all(15),
+                child: Row(
+                  children: [
+                    Icon(Icons.crop_free_rounded, color: Color(0xFF174B40)),
+                    SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        'Köşeleri kartvizitin kenarlarına sürükle. Tüm yazılar çerçevenin içinde kalsın.',
+                      ),
+                    ),
+                  ],
                 ),
-                child: const Icon(Icons.open_with, color: Colors.white, size: 20),
               ),
-              baseColor: const Color(0xFF182321),
-              maskColor: const Color(0x99000000),
-              progressIndicator: const Center(child: CircularProgressIndicator()),
-              onCropped: _onCropped,
-              onStatusChanged: (status) {
-                // Package callbacks may run during the child's build.
-                WidgetsBinding.instance.addPostFrameCallback((_) {
-                  if (mounted) setState(() => _ready = status == CropStatus.ready);
-                });
-              },
+              Expanded(
+                child: FutureBuilder<Uint8List>(
+                  future: _image,
+                  builder: (context, snapshot) {
+                    if (snapshot.hasError) {
+                      return const Center(
+                        child: Padding(
+                          padding: EdgeInsets.all(24),
+                          child: Text(
+                            'Bu fotoğraf kırpma ekranında açılamadı. Kırpmadan devam edebilir veya başka bir fotoğraf seçebilirsin.',
+                          ),
+                        ),
+                      );
+                    }
+                    if (!snapshot.hasData) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+                    return Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: Crop(
+                        image: snapshot.data!,
+                        controller: _controller,
+                        interactive: false,
+                        fixCropRect: false,
+                        initialRectBuilder: InitialRectBuilder.withBuilder(
+                          (viewport, image) => Rect.fromCenter(
+                            center: image.center,
+                            width: image.width * 0.75,
+                            height: image.height * 0.75,
+                          ),
+                        ),
+                        cornerDotBuilder: (size, alignment) => Container(
+                          width: size,
+                          height: size,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF174B40),
+                            border: Border.all(color: Colors.white, width: 3),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Icon(
+                            Icons.open_with,
+                            color: Colors.white,
+                            size: 20,
+                          ),
+                        ),
+                        baseColor: const Color(0xFFEDE8DC),
+                        maskColor: const Color(0x99000000),
+                        progressIndicator: const Center(
+                          child: CircularProgressIndicator(),
+                        ),
+                        onCropped: _onCropped,
+                        onStatusChanged: (status) {
+                          // Package callbacks may run during the child's build.
+                          WidgetsBinding.instance.addPostFrameCallback((_) {
+                            if (mounted) {
+                              setState(
+                                () => _ready = status == CropStatus.ready,
+                              );
+                            }
+                          });
+                        },
+                      ),
+                    );
+                  },
+                ),
               ),
-            );
-          },
-        )),
-        Padding(padding: const EdgeInsets.all(16), child: Column(children: [
-          VividButton(
-            onPressed: _ready && !_cropping ? () {
-              setState(() => _cropping = true);
-              _controller.crop();
-            } : null,
-            icon: Icons.crop,
-            label: _cropping ? 'Kırpılıyor…' : 'Kırp ve oku',
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  children: [
+                    VividButton(
+                      onPressed: _ready && !_cropping
+                          ? () {
+                              setState(() => _cropping = true);
+                              _controller.crop();
+                            }
+                          : null,
+                      icon: Icons.crop,
+                      label: _cropping ? 'Kırpılıyor…' : 'Kırp ve oku',
+                    ),
+                    TextButton(
+                      onPressed: _cropping
+                          ? null
+                          : () =>
+                                Navigator.of(context)
+                                    .pop(const CropSelection.original()),
+                      child: const Text('Kırpmadan devam et'),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
-          TextButton(
-            onPressed: _cropping ? null : () => Navigator.of(context).pop(const CropSelection.original()),
-            child: const Text('Kırpmadan devam et'),
-          ),
-        ])),
-      ]))),
+        ),
+      ),
     ),
   );
 }
