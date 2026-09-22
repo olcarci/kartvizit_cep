@@ -119,7 +119,7 @@ class SettingsHelpPage extends StatelessWidget {
 /// Kurulu derlemenin sürümünü gösterir. Güncellemenin cihaza inip inmediğini
 /// ikona bakmadan doğrulamak için.
 class _VersionLine extends StatelessWidget {
-  const _VersionLine({super.key});
+  const _VersionLine();
 
   @override
   Widget build(BuildContext context) => FutureBuilder<String?>(
