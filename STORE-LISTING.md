@@ -1,11 +1,55 @@
 # Mağaza Listeleme Metinleri — Kartvizit Cep
 
-Play Console / App Store Connect formlarına kopyala-yapıştır için hazırlanmış taslak.
+Play Console / App Store Connect formlarına kopyala-yapıştır için hazırlanmış metinler.
+1.6.x arayüzünü ve özelliklerini yansıtır.
 
 ## Gizlilik politikası URL'si
 
-Yayınlandıktan sonra: `https://olcarci.github.io/kartvizit_cep/privacy.html`
+`https://olcarci.github.io/kartvizit_cep/privacy.html`
 (GitHub'da bir kerelik ayar gerekiyor — aşağıdaki "GitHub Pages'i aç" bölümüne bak.)
+
+---
+
+## Tam açıklama
+
+Play Store ve App Store'da aynı metin kullanılabilir; ikisinde de sınır 4000 karakter.
+
+```
+Kartvizit Cep, elinize geçen kartvizitleri saniyeler içinde dijitale çevirir: kişiyi arşivler, takibe alır ve kendi dijital kartvizitinizi paylaşmanızı sağlar.
+
+NASIL ÇALIŞIR
+• Kartviziti kamerayla tarayın ya da galerinizden bir fotoğraf seçin
+• Ad, şirket, unvan, telefon, e-posta, web sitesi ve adres otomatik okunur
+• Kaydetmeden önce bilgileri gözden geçirin, gerekirse düzeltin
+• Tek dokunuşla rehberinize ekleyin ya da rehberde kayıtlı biriyle eşleştirip eksik bilgilerini tamamlayın
+
+TOPLU TARAMA
+Fuardan ya da toplantıdan bir deste kartvizitle mi döndünüz? Toplu tarama ile arka arkaya okutun, sonra hepsini tek seferde gözden geçirin.
+
+KARTVİZİT ARŞİVİ
+Taranan her kart, fotoğrafıyla birlikte uygulama içinde saklanır. Kişiye, şirkete, etikete veya nota göre arayın; favorilerinizi işaretleyin, şirkete ya da eklenme tarihine göre sıralayın. Kartın arka yüzünü de ekleyebilirsiniz.
+
+HIZLI İŞLEMLER
+Bir kartı açın ve rehbere kaydetmeden arayın, WhatsApp'tan yazın, e-posta gönderin, web sitesini açın veya adresi haritada gösterin. Bilgisi eksik olan işlemler pasif kalır; yanlış numara aranmaz.
+
+TAKİP HATIRLATMALARI
+"Salı günü teklif gönder" gibi bir not bırakın, tarih ve saat seçin. Bekleyen ve tamamlanan takiplerinizi Hatırlatmalar bölümünde görün. Tanıştığınız kişiyi unutmayın.
+
+KENDİ DİJİTAL KARTVİZİTİNİZ
+Bilgilerinizi, fotoğrafınızı veya logonuzu tek kartta toplayın. QR kodunuzu karşınızdakine okutun, iletişim bilgileriniz doğrudan onun rehberine geçsin. İnternet bağlantısı gerekmez. Kartı görsel olarak ya da VCF dosyası olarak da paylaşabilirsiniz.
+
+MÜKERRER KONTROLÜ
+Aynı telefon veya e-posta rehberinizde zaten varsa uygulama sizi uyarır. Mevcut kişiyi eksik bilgilerle tamamlayabilir, ayrı bir kayıt oluşturabilir ya da hiçbir şey değiştirmeden çıkabilirsiniz. Rehberdeki mevcut bilgileriniz silinmez.
+
+YEDEKLEME VE TAŞIMA
+Kartlarınızı; fotoğrafları, notları, etiketleri ve hatırlatmalarıyla birlikte tek dosyaya yedekleyin. Telefon değiştirdiğinizde dosyadan geri yükleyin.
+
+GİZLİLİK
+Metin tanıma tamamen cihazınızda çalışır, internet gerektirmez. Kartvizit Cep hiçbir veriyi sunucuya göndermez. Hesap açmanıza gerek yok; reklam yok, abonelik yok.
+
+NOT
+İsim, şirket, unvan ve adres ayrımı kurallara dayalı bir tahmindir; her kartvizit tasarımında kusursuz sonuç garanti edilmez. Bu yüzden uygulama, kaydetmeden önce alanları gözden geçirmenizi ister.
+```
 
 ---
 
@@ -15,29 +59,10 @@ Yayınlandıktan sonra: `https://olcarci.github.io/kartvizit_cep/privacy.html`
 
 **Kısa açıklama** (max 80 karakter):
 ```
-Kartviziti tara, bilgileri OCR ile oku, tek dokunuşla rehbere kaydet.
+Kartviziti tara, rehbere aktar, takibe al, QR kartvizitini paylaş.
 ```
 
-**Tam açıklama** (max 4000 karakter):
-```
-Kartvizit Cep, elinizdeki kartvizitleri saniyeler içinde telefon rehberinize aktarmanızı sağlar.
-
-NASIL ÇALIŞIR?
-• Kartviziti kameranla tara ya da galeriden bir fotoğraf seç
-• Uygulama, ad, şirket, unvan, telefon, e-posta, web sitesi ve adres bilgilerini otomatik olarak okur
-• Okunan bilgileri kaydetmeden önce gözden geçir, gerekirse düzelt
-• Tek dokunuşla rehberine yeni kişi olarak ekle ya da rehberde zaten kayıtlı biriyle eşleştirip bilgileri tamamla
-
-ÖZELLİKLER
-• Otomatik metin tanıma (OCR) — internet gerektirmez, tamamen cihazında çalışır
-• Taranan kartvizitler uygulama içi galeride saklanır, istediğin zaman arayıp tekrar açabilirsin
-• Rehberde aynı kişi zaten varsa akıllıca tespit eder, mükerrer kayıt oluşturmaz
-• Cep, iş ve diğer telefon numaralarını ayrı ayrı tanır ve düzenler
-• Sade, hızlı arayüz — hesap oluşturma yok, reklam yok
-
-GİZLİLİĞİN ÖNCELİĞİMİZ
-Kartvizit Cep hiçbir veriyi sunucuya göndermez. Kamera, fotoğraf ve rehber erişimi yalnızca cihazında, senin onayınla kullanılır. Detaylar için gizlilik politikamıza bakabilirsin.
-```
+**Tam açıklama:** yukarıdaki ortak metin.
 
 **Kategori:** İş (Business) — alternatif: Üretkenlik (Productivity)
 
@@ -50,11 +75,6 @@ Kartvizit Cep hiçbir veriyi sunucuya göndermez. Kamera, fotoğraf ve rehber er
 - Erişilen izinler (kamera, fotoğraflar, rehber) formda "kullanılıyor ama toplanmıyor/paylaşılmıyor/aktarılmıyor" şeklinde işaretlenmeli
 - Şifreleme / silme talebi soruları: cihazda tutulduğu ve kullanıcı istediğinde silebildiği için ilgili kutucuklar işaretlenebilir
 
-**Gerekli görseller (henüz hazır değil, ayrıca hazırlanmalı):**
-- Uygulama simgesi: 512×512 px PNG
-- Feature graphic: 1024×500 px
-- Ekran görüntüleri: en az 2 adet, telefon için 16:9 veya 9:16
-
 ---
 
 ## App Store Connect (iOS)
@@ -64,11 +84,11 @@ Kartvizit Cep hiçbir veriyi sunucuya göndermez. Kamera, fotoğraf ve rehber er
 Kartvizit tara, rehbere ekle
 ```
 
-**Açıklama** (max 4000 karakter): Play Store'daki tam açıklamayla aynısı kullanılabilir.
+**Açıklama:** yukarıdaki ortak metin.
 
-**Anahtar kelimeler** (max 100 karakter, virgülle ayrılmış):
+**Anahtar kelimeler** (max 100 karakter, virgülle ayrılmış, aralara boşluk konmaz):
 ```
-kartvizit,ocr,tarama,rehber,kişi,iş kartı,scanner,business card,contacts
+kartvizit,tarayıcı,ocr,rehber,kişi,qr,vcard,iş kartı,scanner,business card,takip,hatırlatma
 ```
 
 **Kategori:** Business — İkincil: Productivity
@@ -76,6 +96,42 @@ kartvizit,ocr,tarama,rehber,kişi,iş kartı,scanner,business card,contacts
 **App Privacy (Gizlilik) formu:** "Data Not Collected" (Veri Toplanmıyor) seçilebilir — kamera/fotoğraf/rehber erişimi cihaz dışına hiçbir veri aktarmıyor. Apple'ın sorduğu izin kategorilerinde (Contacts, Photos, Camera) "cihazda kullanılıyor, toplanmıyor" seçeneklerini işaretle.
 
 **Gizlilik politikası URL'si:** aynı, `https://olcarci.github.io/kartvizit_cep/privacy.html`
+
+---
+
+## Sürüm notları (What's New in This Version)
+
+**1.6.1:**
+```
+Ayarlar ve yardım ekranının altına sürüm ve derleme bilgisi eklendi; hangi sürümü kullandığınızı tek bakışta görebilirsiniz.
+
+Küçük iyileştirmeler ve düzeltmeler.
+```
+
+---
+
+## Ekran görüntüleri
+
+Mağaza görselleri **sürüme bağlı metadata'dır, derlemenin içinden gelmez.** Arayüz
+değiştiğinde elle güncellenmeleri gerekir; yeni sürüm kaydı bir öncekinin görsellerini
+kopyalayarak açılır. Sürüm incelemeye gönderildikten sonra görseller kilitlenir — yükleyip
+**Save**'e basmak, "Add for Review"dan önce yapılmalıdır.
+
+1.6.x arayüzü için önerilen sıra (ilk üçü satın alma kararını belirler):
+
+1. **Ana Sayfa** — fildişi tasarım ve ana eylemler
+2. **Kişi bilgilerini kontrol et** — üstte kart fotoğrafı, altında okunan alanlar
+3. **Kişi profili** — kişi bilgileri ve Hızlı işlemler
+4. **Kartvizit Galerisi** — dolu arşiv, arama ve filtreler
+5. **Kartvizitim** — oluşturulmuş kart ve QR kodu
+6. **Hatırlatmalar** — bekleyen takipler
+
+Görsellerde gerçek kartvizit kullanılmamalı: başkalarının iletişim bilgileri herkese açık
+bir sayfada yayınlanmış olur. Kurgusal örnek kartlarla tarayın.
+
+**Diğer gerekli görseller:**
+- Uygulama simgesi: 1024×1024 px (iOS), 512×512 px (Play)
+- Play feature graphic: 1024×500 px
 
 ---
 
