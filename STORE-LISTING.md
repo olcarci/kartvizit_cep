@@ -135,6 +135,84 @@ bir sayfada yayınlanmış olur. Kurgusal örnek kartlarla tarayın.
 
 ---
 
+## English listing (secondary locale)
+
+Add this as an **English (U.S.)** locale in both consoles, alongside the Turkish
+primary listing — don't replace the Turkish text with this. App Store Connect
+and Play Console both let you keep several locale versions of the same listing
+at once; stores show each user whichever one matches their device language,
+falling back to the primary (Turkish) otherwise.
+
+**App name:** keep `Kartvizit Cep` as-is — it's the brand name, not a
+description, so it stays the same across locales (this is a judgment call, not
+a rule; say so if you'd rather have an English name).
+
+**Play Store short description** (max 80 characters):
+```
+Scan business cards, save to contacts, track follow-ups, share your QR card.
+```
+
+**App Store subtitle** (max 30 characters):
+```
+Scan cards, add to contacts
+```
+
+**Full description** (same 4000-character limit, used on both stores):
+```
+Kartvizit Cep instantly turns paper business cards into digital contacts: it archives the person, tracks follow-ups, and lets you share your own digital business card.
+
+HOW IT WORKS
+• Scan a card with your camera or pick a photo from your gallery
+• Name, company, title, phone, email, website, and address are read automatically
+• Review the details before saving and correct anything if needed
+• Add to your contacts with one tap, or match an existing contact and fill in what's missing
+
+BATCH SCANNING
+Came back from a conference or meeting with a stack of cards? Scan them one after another with batch scanning, then review them all at once.
+
+CARD ARCHIVE
+Every scanned card is stored in the app along with its photo. Search by person, company, tag, or note; mark favorites, and sort by company or date added. You can also add the back of the card.
+
+QUICK ACTIONS
+Open a card and call, message on WhatsApp, send an email, open the website, or show the address on the map — without saving it to your contacts first. Actions with missing information stay disabled, so you never call the wrong number.
+
+FOLLOW-UP REMINDERS
+Leave yourself a note like "send a quote on Tuesday," pick a date and time. See your pending and completed follow-ups in the Reminders section. Never forget someone you just met.
+
+YOUR OWN DIGITAL BUSINESS CARD
+Bring your details, photo, or logo together on one card. Let people scan your QR code so your contact info goes straight into their phone. No internet connection needed. You can also share the card as an image or a VCF file.
+
+DUPLICATE CHECK
+If the phone number or email already exists in your contacts, the app warns you. You can fill in the missing details on the existing contact, create a separate entry, or leave without changing anything. Your existing contact information is never deleted.
+
+BACKUP AND TRANSFER
+Back up your cards — photos, notes, tags, and reminders included — into a single file. Restore from that file when you switch phones.
+
+PRIVACY
+Text recognition runs entirely on your device and needs no internet connection. Kartvizit Cep never sends any data to a server. No account required; no ads, no subscription.
+
+NOTE
+Splitting text into name, company, title, and address is a rule-based guess; a flawless result isn't guaranteed for every card design. That's why the app asks you to review the fields before saving.
+```
+
+**App Store keywords** (max 100 characters, comma-separated, no spaces):
+```
+business card,scanner,ocr,contacts,qr code,vcard,networking,follow-up,reminder,card reader
+```
+
+**What's New in This Version — 1.6.1 (English):**
+```
+Added a version and build number line at the bottom of the Settings & Help screen, so you can see at a glance which version is installed.
+
+Minor improvements and fixes.
+```
+
+**Play Store category / App Store category:** same as the Turkish listing (Business, secondary Productivity) — categories aren't per-locale.
+
+**App Privacy / Data Safety forms:** already language-independent (checkboxes, not free text) — nothing to duplicate there.
+
+---
+
 ## GitHub Pages'i aç (gizlilik sayfasını yayınlamak için, tek seferlik)
 
 1. https://github.com/olcarci/kartvizit_cep/settings/pages adresine git
