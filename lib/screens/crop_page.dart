@@ -123,7 +123,11 @@ class _CropPageState extends State<CropPage> {
                         interactive: false,
                         fixCropRect: false,
                         initialRectBuilder: InitialRectBuilder.withBuilder(
-                          (viewport, image) => image,
+                          (viewport, image) => Rect.fromCenter(
+                            center: image.center,
+                            width: image.width * 0.98,
+                            height: image.height * 0.98,
+                          ),
                         ),
                         cornerDotBuilder: (size, alignment) => Container(
                           width: size,
