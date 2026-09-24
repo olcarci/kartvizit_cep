@@ -28,6 +28,10 @@ class _CropPageState extends State<CropPage> {
   late final Future<Uint8List> _image;
   bool _ready = false;
   bool _cropping = false;
+  // Tracks the crop area (in source-image pixel space) as the user drags the
+  // corners. Re-applied to the controller right before cropping, in case the
+  // controller's own rect and the last-rendered rect ever drift apart.
+  Rect? _lastArea;
 
   @override
   void initState() {
@@ -149,6 +153,8 @@ class _CropPageState extends State<CropPage> {
                           child: CircularProgressIndicator(),
                         ),
                         onCropped: _onCropped,
+                        onMoved: (viewportRect, imageRect) =>
+                            _lastArea = imageRect,
                         onStatusChanged: (status) {
                           // Package callbacks may run during the child's build.
                           WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -171,6 +177,11 @@ class _CropPageState extends State<CropPage> {
                     VividButton(
                       onPressed: _ready && !_cropping
                           ? () {
+                              // Re-assert the last rect the user actually
+                              // saw, in case the controller's internal rect
+                              // has drifted from what was on screen.
+                              final area = _lastArea;
+                              if (area != null) _controller.area = area;
                               setState(() => _cropping = true);
                               _controller.crop();
                             }
