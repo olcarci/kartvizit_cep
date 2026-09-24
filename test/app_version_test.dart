@@ -33,6 +33,6 @@ void main() {
 
   test('pubspec.yaml varlık olarak paketlenmiş', () {
     final pubspec = File('pubspec.yaml').readAsStringSync();
-    expect(pubspec, contains('\n    - pubspec.yaml\n'));
+    expect(pubspec, matches(RegExp(r'\n\s*-\s*pubspec\.yaml\s*\r?\n')));
   });
 }
