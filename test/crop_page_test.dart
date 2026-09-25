@@ -173,4 +173,103 @@ void main() {
       expect(tester.takeException(), isNull);
     },
   );
+
+  testWidgets(
+    'Kırp butonuna basarken ufak bir yeniden boyutlanma seçimi bozmaz',
+    (tester) async {
+      // Regression test: a widget below the crop area (like the crop
+      // button itself, while its press animation is settling) can shift
+      // the available layout size by a few pixels right as the user taps
+      // "Kırp ve oku". The crop rect must survive that, not silently
+      // reset to the full-image default.
+      CropSelection? selection;
+      await tester.runAsync(() async {
+        final bytes = await _redWithBlueCenter();
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Builder(
+              builder: (context) => TextButton(
+                onPressed: () async {
+                  selection = await Navigator.of(context).push<CropSelection>(
+                    MaterialPageRoute(
+                      builder: (_) => CropPage(
+                        imagePath: '/fake/card.png',
+                        imageLoader: () async => bytes,
+                      ),
+                    ),
+                  );
+                },
+                child: const Text('Aç'),
+              ),
+            ),
+          ),
+        );
+        await tester.tap(find.text('Aç'));
+        await _pumpUntil(
+          tester,
+          () => find.byIcon(Icons.open_with).evaluate().length == 4,
+        );
+        // Let MaterialPageRoute's own ~300ms push transition fully settle
+        // before measuring/dragging by screen position - otherwise the
+        // slide-in animation itself moves everything we're measuring,
+        // independent of anything CropPage does.
+        await tester.pump(const Duration(milliseconds: 400));
+
+        final handles = find.byIcon(Icons.open_with);
+        final topLeft = tester.getCenter(handles.at(0));
+        final bottomRight = tester.getCenter(handles.at(3));
+        final boxWidth = bottomRight.dx - topLeft.dx;
+        final boxHeight = bottomRight.dy - topLeft.dy;
+
+        await tester.drag(
+          handles.at(0),
+          Offset(boxWidth * 0.35, boxHeight * 0.35),
+        );
+        await tester.pump();
+        await tester.drag(
+          find.byIcon(Icons.open_with).at(3),
+          Offset(-boxWidth * 0.35, -boxHeight * 0.35),
+        );
+        await tester.pump();
+
+        final beforePress = tester.getCenter(
+          find.byIcon(Icons.open_with).at(0),
+        );
+
+        // Press and hold (without releasing) exactly the way a real tap
+        // starts, so the button's own press-state animation (which can
+        // shift its rendered size by a pixel or two) has a chance to ripple
+        // into the crop area's layout before the tap completes.
+        final gesture = await tester.startGesture(
+          tester.getCenter(find.text('Kırp ve oku')),
+        );
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 250));
+
+        final duringPress = tester.getCenter(
+          find.byIcon(Icons.open_with).at(0),
+        );
+        // A few pixels of proportional rescale from an incidental relayout
+        // is fine; snapping back toward the default (near-full-image) box
+        // is not.
+        expect((duringPress - beforePress).distance, lessThan(5));
+
+        await gesture.up();
+        await _pumpUntil(tester, () => selection != null);
+
+        final croppedBytes = selection?.bytes;
+        expect(croppedBytes, isNotNull);
+
+        final cropped = await _decode(croppedBytes!);
+        try {
+          expect(await _containsRed(cropped), isFalse);
+        } finally {
+          cropped.dispose();
+        }
+      });
+
+      expect(selection, isNotNull);
+      expect(tester.takeException(), isNull);
+    },
+  );
 }

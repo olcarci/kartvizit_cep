@@ -43,9 +43,13 @@ class _CropPageState extends State<CropPage> {
   late final Future<_LoadedImage> _image;
   bool _cropping = false;
 
-  // The crop rect and the rect the image is displayed in, both in the same
-  // logical-pixel space as the LayoutBuilder that hosts the preview. Reset
-  // only when the available size actually changes.
+  // The user's crop selection is kept in normalized image coordinates
+  // (0.0..1.0), not in screen pixels. This makes the selection immune to
+  // SafeArea/layout/button-size changes that can happen on a real iPhone
+  // while the user presses "Kırp ve oku".
+  Rect _normalizedCrop = const Rect.fromLTWH(0.01, 0.01, 0.98, 0.98);
+
+  // These two values are only for drawing the preview on screen.
   Rect? _cropRect;
   Rect? _displayRect;
   Size? _lastConstraintsSize;
@@ -114,16 +118,42 @@ class _CropPageState extends State<CropPage> {
     return Rect.fromLTWH(left, top, width, height);
   }
 
-  void _ensureLayout(Size constraintsSize, Size imageSize) {
-    if (_lastConstraintsSize == constraintsSize) return;
-    _lastConstraintsSize = constraintsSize;
-    final display = _fitContain(imageSize, constraintsSize);
-    _displayRect = display;
-    _cropRect = Rect.fromCenter(
-      center: display.center,
-      width: display.width * 0.98,
-      height: display.height * 0.98,
+  Rect _cropRectForDisplay(Rect display) {
+    return Rect.fromLTWH(
+      display.left + (_normalizedCrop.left * display.width),
+      display.top + (_normalizedCrop.top * display.height),
+      _normalizedCrop.width * display.width,
+      _normalizedCrop.height * display.height,
     );
+  }
+
+  Rect _normalizeCropRect(Rect crop, Rect display) {
+    if (display.isEmpty) return _normalizedCrop;
+
+    final left = ((crop.left - display.left) / display.width).clamp(0.0, 1.0);
+    final top = ((crop.top - display.top) / display.height).clamp(0.0, 1.0);
+    final right =
+        ((crop.right - display.left) / display.width).clamp(0.0, 1.0);
+    final bottom =
+        ((crop.bottom - display.top) / display.height).clamp(0.0, 1.0);
+
+    return Rect.fromLTRB(left, top, right, bottom);
+  }
+
+  void _ensureLayout(Size constraintsSize, Size imageSize) {
+    if (_lastConstraintsSize == constraintsSize &&
+        _displayRect != null &&
+        _cropRect != null) {
+      return;
+    }
+
+    _lastConstraintsSize = constraintsSize;
+    final newDisplay = _fitContain(imageSize, constraintsSize);
+
+    // Re-create the visible crop rectangle from the normalized selection.
+    // The screen can relayout freely; the actual selection never changes.
+    _displayRect = newDisplay;
+    _cropRect = _cropRectForDisplay(newDisplay);
   }
 
   void _dragCorner(_Corner corner, Offset delta) {
@@ -173,32 +203,33 @@ class _CropPageState extends State<CropPage> {
         );
         updated = Rect.fromLTRB(rect.left, rect.top, right, bottom);
     }
-    setState(() => _cropRect = updated);
+    setState(() {
+      _cropRect = updated;
+      _normalizedCrop = _normalizeCropRect(updated, bounds);
+    });
   }
 
-  // Converts the on-screen crop rect into the original image's own pixel
-  // space, using the exact same display rect the preview was drawn in.
-  Rect? _imageSpaceCropRect(Size imageSize) {
-    final crop = _cropRect;
-    final display = _displayRect;
-    if (crop == null || display == null || display.isEmpty) return null;
-    final scaleX = imageSize.width / display.width;
-    final scaleY = imageSize.height / display.height;
+  // Converts the normalized selection directly into the source image's
+  // pixel space. No screen/layout coordinates are involved here, so a
+  // relayout caused by SafeArea, button press animation, device rotation,
+  // etc. cannot change what will actually be cropped.
+  Rect _imageSpaceCropRect(Size imageSize) {
     return Rect.fromLTWH(
-      (crop.left - display.left) * scaleX,
-      (crop.top - display.top) * scaleY,
-      crop.width * scaleX,
-      crop.height * scaleY,
+      _normalizedCrop.left * imageSize.width,
+      _normalizedCrop.top * imageSize.height,
+      _normalizedCrop.width * imageSize.width,
+      _normalizedCrop.height * imageSize.height,
     );
   }
 
   Future<void> _cropAndPop(_LoadedImage image) async {
+    // Read the crop area before triggering any rebuild (e.g. from
+    // setState below), so a stray relayout can't change it out from under
+    // us between the tap and the actual crop.
+    final area = _imageSpaceCropRect(image.size);
     setState(() => _cropping = true);
     try {
-      final area = _imageSpaceCropRect(image.size);
-      final cropped = area == null
-          ? image.bytes
-          : await _cropToArea(image.bytes, area);
+      final cropped = await _cropToArea(image.bytes, area);
       if (!mounted) return;
       Navigator.of(context).pop(CropSelection.cropped(cropped));
     } catch (_) {
