@@ -24,13 +24,15 @@ class CropPage extends StatefulWidget {
 }
 
 class _CropPageState extends State<CropPage> {
-  final _controller = CropController();
   late final Future<Uint8List> _image;
   bool _ready = false;
   bool _cropping = false;
   // Tracks the crop area (in source-image pixel space) as the user drags the
-  // corners. Re-applied to the controller right before cropping, in case the
-  // controller's own rect and the last-rendered rect ever drift apart.
+  // corners. The crop_your_image package's own CropController.crop() reads
+  // its internal rect lazily and that rect has been observed to snap back to
+  // the initial (near full-image) default right as the crop button is
+  // pressed - so instead of trusting the package's imperative crop(), we
+  // crop the original bytes ourselves with this last-known-good rect.
   Rect? _lastArea;
 
   @override
@@ -59,11 +61,15 @@ class _CropPageState extends State<CropPage> {
     }
   }
 
-  void _onCropped(CropResult result) {
-    if (!mounted) return;
-    if (result is CropSuccess) {
-      Navigator.of(context).pop(CropSelection.cropped(result.croppedImage));
-    } else {
+  Future<void> _cropAndPop(Rect? area) async {
+    setState(() => _cropping = true);
+    try {
+      final bytes = await _image;
+      final cropped = area == null ? bytes : await _cropToArea(bytes, area);
+      if (!mounted) return;
+      Navigator.of(context).pop(CropSelection.cropped(cropped));
+    } catch (_) {
+      if (!mounted) return;
       setState(() {
         _cropping = false;
         _ready = true;
@@ -75,6 +81,55 @@ class _CropPageState extends State<CropPage> {
           ),
         ),
       );
+    }
+  }
+
+  // Crops [bytes] to [area] (in the source image's own pixel space) using
+  // dart:ui directly, independent of the crop_your_image package's own
+  // (unreliable) imperative crop.
+  Future<Uint8List> _cropToArea(Uint8List bytes, Rect area) async {
+    final codec = await ui.instantiateImageCodec(bytes);
+    try {
+      final frame = await codec.getNextFrame();
+      final image = frame.image;
+      try {
+        final imageWidth = image.width.toDouble();
+        final imageHeight = image.height.toDouble();
+        final srcRect = Rect.fromLTRB(
+          area.left.clamp(0, imageWidth),
+          area.top.clamp(0, imageHeight),
+          (area.left + area.width).clamp(0, imageWidth),
+          (area.top + area.height).clamp(0, imageHeight),
+        );
+        final width = srcRect.width.round().clamp(1, image.width);
+        final height = srcRect.height.round().clamp(1, image.height);
+
+        final recorder = ui.PictureRecorder();
+        final canvas = Canvas(recorder);
+        canvas.drawImageRect(
+          image,
+          srcRect,
+          Rect.fromLTWH(0, 0, width.toDouble(), height.toDouble()),
+          Paint(),
+        );
+        final croppedImage = await recorder.endRecording().toImage(
+          width,
+          height,
+        );
+        try {
+          final png = await croppedImage.toByteData(
+            format: ui.ImageByteFormat.png,
+          );
+          if (png == null) throw StateError('Crop encoding failed');
+          return png.buffer.asUint8List(png.offsetInBytes, png.lengthInBytes);
+        } finally {
+          croppedImage.dispose();
+        }
+      } finally {
+        frame.image.dispose();
+      }
+    } finally {
+      codec.dispose();
     }
   }
 
@@ -123,7 +178,6 @@ class _CropPageState extends State<CropPage> {
                       padding: const EdgeInsets.all(24),
                       child: Crop(
                         image: snapshot.data!,
-                        controller: _controller,
                         interactive: false,
                         fixCropRect: false,
                         initialRectBuilder: InitialRectBuilder.withBuilder(
@@ -152,7 +206,10 @@ class _CropPageState extends State<CropPage> {
                         progressIndicator: const Center(
                           child: CircularProgressIndicator(),
                         ),
-                        onCropped: _onCropped,
+                        // The actual crop is performed ourselves in
+                        // _cropToArea; this package never runs its own
+                        // imperative crop.
+                        onCropped: (_) {},
                         onMoved: (viewportRect, imageRect) =>
                             _lastArea = imageRect,
                         onStatusChanged: (status) {
@@ -176,15 +233,7 @@ class _CropPageState extends State<CropPage> {
                   children: [
                     VividButton(
                       onPressed: _ready && !_cropping
-                          ? () {
-                              // Re-assert the last rect the user actually
-                              // saw, in case the controller's internal rect
-                              // has drifted from what was on screen.
-                              final area = _lastArea;
-                              if (area != null) _controller.area = area;
-                              setState(() => _cropping = true);
-                              _controller.crop();
-                            }
+                          ? () => _cropAndPop(_lastArea)
                           : null,
                       icon: Icons.crop,
                       label: _cropping ? 'Kırpılıyor…' : 'Kırp ve oku',
