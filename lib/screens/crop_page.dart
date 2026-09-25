@@ -2,7 +2,6 @@ import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
-import 'package:crop_your_image/crop_your_image.dart';
 import 'package:flutter/material.dart';
 
 import '../widgets/tech_background.dart';
@@ -14,6 +13,20 @@ class CropSelection {
   const CropSelection.cropped(this.bytes);
 }
 
+class _LoadedImage {
+  final Uint8List bytes;
+  final Size size;
+  const _LoadedImage({required this.bytes, required this.size});
+}
+
+enum _Corner { topLeft, topRight, bottomLeft, bottomRight }
+
+/// Minimal, self-contained crop UI. Earlier versions of this screen used the
+/// crop_your_image package, but its internal state (re-derived from
+/// MediaQuery on every didChangeDependencies call) was observed to silently
+/// diverge from what was visually dragged on screen. Doing the layout,
+/// dragging and pixel-cropping ourselves keeps every coordinate conversion
+/// in one easily-verified place.
 class CropPage extends StatefulWidget {
   final String imagePath;
   final Future<Uint8List> Function()? imageLoader;
@@ -24,26 +37,49 @@ class CropPage extends StatefulWidget {
 }
 
 class _CropPageState extends State<CropPage> {
-  late final Future<Uint8List> _image;
-  bool _ready = false;
+  static const double _handleTouchSize = 44;
+  static const double _minCropSize = 40;
+
+  late final Future<_LoadedImage> _image;
   bool _cropping = false;
-  // Tracks the crop area (in source-image pixel space) as the user drags the
-  // corners. The crop_your_image package's own CropController.crop() reads
-  // its internal rect lazily and that rect has been observed to snap back to
-  // the initial (near full-image) default right as the crop button is
-  // pressed - so instead of trusting the package's imperative crop(), we
-  // crop the original bytes ourselves with this last-known-good rect.
-  Rect? _lastArea;
+
+  // The crop rect and the rect the image is displayed in, both in the same
+  // logical-pixel space as the LayoutBuilder that hosts the preview. Reset
+  // only when the available size actually changes.
+  Rect? _cropRect;
+  Rect? _displayRect;
+  Size? _lastConstraintsSize;
 
   @override
   void initState() {
     super.initState();
-    _image = widget.imageLoader?.call() ?? _loadImage();
+    _image = _load();
   }
 
-  Future<Uint8List> _loadImage() async {
+  Future<_LoadedImage> _load() async {
+    final bytes = await (widget.imageLoader?.call() ?? _readAsPng());
+    final codec = await ui.instantiateImageCodec(bytes);
+    try {
+      final frame = await codec.getNextFrame();
+      try {
+        return _LoadedImage(
+          bytes: bytes,
+          size: Size(
+            frame.image.width.toDouble(),
+            frame.image.height.toDouble(),
+          ),
+        );
+      } finally {
+        frame.image.dispose();
+      }
+    } finally {
+      codec.dispose();
+    }
+  }
+
+  Future<Uint8List> _readAsPng() async {
     final bytes = await File(widget.imagePath).readAsBytes();
-    // Normalize supported phone image formats into PNG for the crop backend.
+    // Normalize supported phone image formats into PNG for the crop preview.
     final codec = await ui.instantiateImageCodec(bytes);
     try {
       final frame = await codec.getNextFrame();
@@ -61,19 +97,113 @@ class _CropPageState extends State<CropPage> {
     }
   }
 
-  Future<void> _cropAndPop(Rect? area) async {
+  Rect _fitContain(Size imageSize, Size container) {
+    final imageAspect = imageSize.width / imageSize.height;
+    final containerAspect = container.width / container.height;
+    double width;
+    double height;
+    if (imageAspect > containerAspect) {
+      width = container.width;
+      height = width / imageAspect;
+    } else {
+      height = container.height;
+      width = height * imageAspect;
+    }
+    final left = (container.width - width) / 2;
+    final top = (container.height - height) / 2;
+    return Rect.fromLTWH(left, top, width, height);
+  }
+
+  void _ensureLayout(Size constraintsSize, Size imageSize) {
+    if (_lastConstraintsSize == constraintsSize) return;
+    _lastConstraintsSize = constraintsSize;
+    final display = _fitContain(imageSize, constraintsSize);
+    _displayRect = display;
+    _cropRect = Rect.fromCenter(
+      center: display.center,
+      width: display.width * 0.98,
+      height: display.height * 0.98,
+    );
+  }
+
+  void _dragCorner(_Corner corner, Offset delta) {
+    final bounds = _displayRect;
+    final rect = _cropRect;
+    if (bounds == null || rect == null) return;
+    late final Rect updated;
+    switch (corner) {
+      case _Corner.topLeft:
+        final left = (rect.left + delta.dx).clamp(
+          bounds.left,
+          rect.right - _minCropSize,
+        );
+        final top = (rect.top + delta.dy).clamp(
+          bounds.top,
+          rect.bottom - _minCropSize,
+        );
+        updated = Rect.fromLTRB(left, top, rect.right, rect.bottom);
+      case _Corner.topRight:
+        final right = (rect.right + delta.dx).clamp(
+          rect.left + _minCropSize,
+          bounds.right,
+        );
+        final top = (rect.top + delta.dy).clamp(
+          bounds.top,
+          rect.bottom - _minCropSize,
+        );
+        updated = Rect.fromLTRB(rect.left, top, right, rect.bottom);
+      case _Corner.bottomLeft:
+        final left = (rect.left + delta.dx).clamp(
+          bounds.left,
+          rect.right - _minCropSize,
+        );
+        final bottom = (rect.bottom + delta.dy).clamp(
+          rect.top + _minCropSize,
+          bounds.bottom,
+        );
+        updated = Rect.fromLTRB(left, rect.top, rect.right, bottom);
+      case _Corner.bottomRight:
+        final right = (rect.right + delta.dx).clamp(
+          rect.left + _minCropSize,
+          bounds.right,
+        );
+        final bottom = (rect.bottom + delta.dy).clamp(
+          rect.top + _minCropSize,
+          bounds.bottom,
+        );
+        updated = Rect.fromLTRB(rect.left, rect.top, right, bottom);
+    }
+    setState(() => _cropRect = updated);
+  }
+
+  // Converts the on-screen crop rect into the original image's own pixel
+  // space, using the exact same display rect the preview was drawn in.
+  Rect? _imageSpaceCropRect(Size imageSize) {
+    final crop = _cropRect;
+    final display = _displayRect;
+    if (crop == null || display == null || display.isEmpty) return null;
+    final scaleX = imageSize.width / display.width;
+    final scaleY = imageSize.height / display.height;
+    return Rect.fromLTWH(
+      (crop.left - display.left) * scaleX,
+      (crop.top - display.top) * scaleY,
+      crop.width * scaleX,
+      crop.height * scaleY,
+    );
+  }
+
+  Future<void> _cropAndPop(_LoadedImage image) async {
     setState(() => _cropping = true);
     try {
-      final bytes = await _image;
-      final cropped = area == null ? bytes : await _cropToArea(bytes, area);
+      final area = _imageSpaceCropRect(image.size);
+      final cropped = area == null
+          ? image.bytes
+          : await _cropToArea(image.bytes, area);
       if (!mounted) return;
       Navigator.of(context).pop(CropSelection.cropped(cropped));
     } catch (_) {
       if (!mounted) return;
-      setState(() {
-        _cropping = false;
-        _ready = true;
-      });
+      setState(() => _cropping = false);
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
@@ -85,8 +215,7 @@ class _CropPageState extends State<CropPage> {
   }
 
   // Crops [bytes] to [area] (in the source image's own pixel space) using
-  // dart:ui directly, independent of the crop_your_image package's own
-  // (unreliable) imperative crop.
+  // dart:ui directly.
   Future<Uint8List> _cropToArea(Uint8List bytes, Rect area) async {
     final codec = await ui.instantiateImageCodec(bytes);
     try {
@@ -133,6 +262,32 @@ class _CropPageState extends State<CropPage> {
     }
   }
 
+  Widget _cornerHandle(Offset position, _Corner corner) {
+    const dotSize = 36.0;
+    return Positioned(
+      left: position.dx - _handleTouchSize / 2,
+      top: position.dy - _handleTouchSize / 2,
+      width: _handleTouchSize,
+      height: _handleTouchSize,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onPanUpdate: (details) => _dragCorner(corner, details.delta),
+        child: Center(
+          child: Container(
+            width: dotSize,
+            height: dotSize,
+            decoration: BoxDecoration(
+              color: const Color(0xFF174B40),
+              border: Border.all(color: Colors.white, width: 3),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: const Icon(Icons.open_with, color: Colors.white, size: 20),
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) => PopScope(
     canPop: !_cropping,
@@ -158,7 +313,7 @@ class _CropPageState extends State<CropPage> {
                 ),
               ),
               Expanded(
-                child: FutureBuilder<Uint8List>(
+                child: FutureBuilder<_LoadedImage>(
                   future: _image,
                   builder: (context, snapshot) {
                     if (snapshot.hasError) {
@@ -171,56 +326,49 @@ class _CropPageState extends State<CropPage> {
                         ),
                       );
                     }
-                    if (!snapshot.hasData) {
+                    final image = snapshot.data;
+                    if (image == null) {
                       return const Center(child: CircularProgressIndicator());
                     }
                     return Padding(
                       padding: const EdgeInsets.all(24),
-                      child: Crop(
-                        image: snapshot.data!,
-                        interactive: false,
-                        fixCropRect: false,
-                        initialRectBuilder: InitialRectBuilder.withBuilder(
-                          (viewport, image) => Rect.fromCenter(
-                            center: image.center,
-                            width: image.width * 0.98,
-                            height: image.height * 0.98,
-                          ),
-                        ),
-                        cornerDotBuilder: (size, alignment) => Container(
-                          width: size,
-                          height: size,
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF174B40),
-                            border: Border.all(color: Colors.white, width: 3),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: const Icon(
-                            Icons.open_with,
-                            color: Colors.white,
-                            size: 20,
-                          ),
-                        ),
-                        baseColor: const Color(0xFFEDE8DC),
-                        maskColor: const Color(0x99000000),
-                        progressIndicator: const Center(
-                          child: CircularProgressIndicator(),
-                        ),
-                        // The actual crop is performed ourselves in
-                        // _cropToArea; this package never runs its own
-                        // imperative crop.
-                        onCropped: (_) {},
-                        onMoved: (viewportRect, imageRect) =>
-                            _lastArea = imageRect,
-                        onStatusChanged: (status) {
-                          // Package callbacks may run during the child's build.
-                          WidgetsBinding.instance.addPostFrameCallback((_) {
-                            if (mounted) {
-                              setState(
-                                () => _ready = status == CropStatus.ready,
-                              );
-                            }
-                          });
+                      child: LayoutBuilder(
+                        builder: (context, constraints) {
+                          _ensureLayout(constraints.biggest, image.size);
+                          final display = _displayRect!;
+                          final crop = _cropRect!;
+                          return Stack(
+                            clipBehavior: Clip.hardEdge,
+                            children: [
+                              Positioned.fromRect(
+                                rect: display,
+                                child: Image.memory(
+                                  image.bytes,
+                                  fit: BoxFit.fill,
+                                ),
+                              ),
+                              IgnorePointer(
+                                child: ClipPath(
+                                  clipper: _HoleClipper(crop),
+                                  child: Container(
+                                    width: double.infinity,
+                                    height: double.infinity,
+                                    color: const Color(0x99000000),
+                                  ),
+                                ),
+                              ),
+                              _cornerHandle(crop.topLeft, _Corner.topLeft),
+                              _cornerHandle(crop.topRight, _Corner.topRight),
+                              _cornerHandle(
+                                crop.bottomLeft,
+                                _Corner.bottomLeft,
+                              ),
+                              _cornerHandle(
+                                crop.bottomRight,
+                                _Corner.bottomRight,
+                              ),
+                            ],
+                          );
                         },
                       ),
                     );
@@ -229,24 +377,30 @@ class _CropPageState extends State<CropPage> {
               ),
               Padding(
                 padding: const EdgeInsets.all(16),
-                child: Column(
-                  children: [
-                    VividButton(
-                      onPressed: _ready && !_cropping
-                          ? () => _cropAndPop(_lastArea)
-                          : null,
-                      icon: Icons.crop,
-                      label: _cropping ? 'Kırpılıyor…' : 'Kırp ve oku',
-                    ),
-                    TextButton(
-                      onPressed: _cropping
-                          ? null
-                          : () =>
-                                Navigator.of(context)
-                                    .pop(const CropSelection.original()),
-                      child: const Text('Kırpmadan devam et'),
-                    ),
-                  ],
+                child: FutureBuilder<_LoadedImage>(
+                  future: _image,
+                  builder: (context, snapshot) {
+                    final image = snapshot.data;
+                    return Column(
+                      children: [
+                        VividButton(
+                          onPressed: image != null && !_cropping
+                              ? () => _cropAndPop(image)
+                              : null,
+                          icon: Icons.crop,
+                          label: _cropping ? 'Kırpılıyor…' : 'Kırp ve oku',
+                        ),
+                        TextButton(
+                          onPressed: _cropping
+                              ? null
+                              : () => Navigator.of(
+                                  context,
+                                ).pop(const CropSelection.original()),
+                          child: const Text('Kırpmadan devam et'),
+                        ),
+                      ],
+                    );
+                  },
                 ),
               ),
             ],
@@ -255,4 +409,20 @@ class _CropPageState extends State<CropPage> {
       ),
     ),
   );
+}
+
+class _HoleClipper extends CustomClipper<Path> {
+  final Rect hole;
+  const _HoleClipper(this.hole);
+
+  @override
+  Path getClip(Size size) => Path.combine(
+    PathOperation.difference,
+    Path()..addRect(Rect.fromLTWH(0, 0, size.width, size.height)),
+    Path()..addRect(hole),
+  );
+
+  @override
+  bool shouldReclip(covariant _HoleClipper oldClipper) =>
+      oldClipper.hole != hole;
 }
