@@ -1,7 +1,6 @@
-import 'dart:isolate';
-
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../services/backup_codec.dart';
 import '../services/card_archive_service.dart';
@@ -28,7 +27,9 @@ class _BackupPageState extends State<BackupPage> {
     } catch (error) {
       if (mounted) {
         setState(
-          () => _status = error is FormatException ? error.message : 'İşlem tamamlanamadı. Dosyayı ve kullanılabilir depolama alanını kontrol edin.',
+          () => _status = error is FormatException
+              ? error.message
+              : 'İşlem tamamlanamadı: $error',
         );
       }
     } finally {
@@ -65,18 +66,30 @@ class _BackupPageState extends State<BackupPage> {
       );
       if (proceed != true) return;
     }
-    final bytes = await Isolate.run(() => bundle.encode());
+    // BackupBundle is a custom object and cannot be captured by Isolate.run
+    // on mobile. Encoding here avoids the "object is unsendable" runtime error.
+    final bytes = bundle.encode();
     final date = DateTime.now().toIso8601String().replaceAll(':', '-');
-    final saved = await FileTransferService.save(
+    final name = 'kartvizit-yedek-$date.json';
+
+    if (!mounted) return;
+    final box = context.findRenderObject() as RenderBox?;
+    final origin = box == null
+        ? const Rect.fromLTWH(0, 0, 1, 1)
+        : box.localToGlobal(Offset.zero) & box.size;
+
+    final result = await FileTransferService.saveWithShare(
       bytes,
-      'kartvizit-yedek-$date.json',
+      name,
       'application/json',
+      origin,
     );
+
     if (mounted) {
       setState(
-        () => _status = saved
-            ? '${bundle.entries.length} arşiv kartı yedeklendi.${bundle.personalCard != null ? ' Kişisel kartvizitiniz de yedeğe eklendi.' : ''}'
-            : 'Kaydetme iptal edildi.',
+        () => _status = result.status == ShareResultStatus.success
+            ? '${bundle.entries.length} arşiv kartı için yedek dosyası hazırlandı. Paylaşım ekranından Dosyalara Kaydet, iCloud Drive, Google Drive veya başka güvenli bir konuma kaydedin.${bundle.personalCard != null ? ' Kişisel kartvizitiniz de yedeğe eklendi.' : ''}'
+            : 'Yedek dosyası hazırlandı ancak paylaşım/kaydetme tamamlanmadı.',
       );
     }
   });
@@ -180,10 +193,14 @@ class _BackupPageState extends State<BackupPage> {
                     ),
                   ),
                   const SizedBox(height: 20),
+                  const Text(
+                    'Yedek oluşturduktan sonra açılan paylaşım ekranında Dosyalara Kaydet, iCloud Drive, Google Drive veya başka güvenli bir konum seçin.',
+                  ),
+                  const SizedBox(height: 12),
                   FilledButton.icon(
                     onPressed: _busy ? null : _backup,
-                    icon: const Icon(Icons.save_alt),
-                    label: const Text('Yedek oluştur ve kaydet'),
+                    icon: const Icon(Icons.ios_share),
+                    label: const Text('Yedek oluştur ve dışa aktar'),
                   ),
                   const SizedBox(height: 12),
                   OutlinedButton.icon(

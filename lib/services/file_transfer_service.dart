@@ -7,6 +7,30 @@ import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
 class FileTransferService {
+
+  static Future<ShareResult> saveWithShare(
+    Uint8List bytes,
+    String name,
+    String mime,
+    Rect origin,
+  ) async {
+    final root = await getTemporaryDirectory();
+    final directory = await Directory('${root.path}/kartvizit_yedek')
+        .create(recursive: true);
+
+    final file = File('${directory.path}/$name');
+    await file.writeAsBytes(bytes, flush: true);
+
+    return SharePlus.instance.share(
+      ShareParams(
+        files: [XFile(file.path, mimeType: mime)],
+        text:
+            'Kartvizit Cep yedeği. Dosyayı Dosyalara Kaydet, iCloud Drive, Google Drive veya başka güvenli bir konuma kaydedin.',
+        sharePositionOrigin: origin,
+      ),
+    );
+  }
+
   static Future<bool> save(Uint8List bytes, String name, String mime) async =>
       await FilePicker.saveFile(
         fileName: name,

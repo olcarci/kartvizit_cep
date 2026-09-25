@@ -21,7 +21,8 @@ class SettingsHelpPage extends StatelessWidget {
             leading: const Icon(Icons.backup_outlined),
             title: const Text('Yedekleme ve geri yükleme'),
             subtitle: const Text(
-              'Kartlarınızı dosyaya kaydedin veya yedekten geri alın.',
+              'Kartlarınızı dosyaya kaydedin veya yedekten geri alın. '
+              'Uygulamayı silmeden önce mutlaka yedek oluşturun.',
             ),
             trailing: const Icon(Icons.chevron_right),
             onTap: onBackups,
@@ -105,6 +106,17 @@ class SettingsHelpPage extends StatelessWidget {
               padding: EdgeInsets.all(16),
               child: Text(
                 'Yedekleme ve geri yükleme bölümünden dosya oluşturun. Dosyayı yeni cihaza aktararak geri yükleyin. Yedek fotoğraf ve özel notları içerir; şifreli değildir. Otomatik bulut eşitleme yoktur. Yeni cihazda hatırlatmaları yeniden kaydedin.',
+              ),
+            ),
+          ],
+        ),
+        const ExpansionTile(
+          title: Text('Uygulamayı silersem kartlarım ne olur?'),
+          children: [
+            Padding(
+              padding: EdgeInsets.all(16),
+              child: Text(
+                'Kartvizitler uygulamanın kendi depolama alanında saklanır. Uygulamayı telefondan silerseniz yedeklenmemiş kartvizitler ve fotoğrafları da silinir. Uygulamayı kaldırmadan önce Yedekleme ve geri yükleme bölümünden bir yedek dosyası oluşturup bu dosyayı iCloud Drive, Dosyalar, Google Drive veya bilgisayar gibi güvenli bir yerde saklayın.',
               ),
             ),
           ],
