@@ -28,7 +28,9 @@ class CardParser {
   static final webPattern = RegExp(r'(?:https?://|www\.)[^\s,;]+', caseSensitive: false);
   static final phonePattern = RegExp(r'\+?\d[\d ()\-.]{7,}\d');
   static String fold(String s) => s.toLowerCase().replaceAll('i\u0307', 'i').replaceAll('ı', 'i').replaceAll('ş', 's').replaceAll('ğ', 'g').replaceAll('ü', 'u').replaceAll('ö', 'o').replaceAll('ç', 'c');
-  static final industry = RegExp(r'\b(ltd|sti|a\.s|limited|sirket|dogalgaz|insaat|mekanik|teknoloji|yazilim|ticaret|sanayi|otomotiv|faktoring)\b');
+  static final industry = RegExp(
+    r'\b(ltd|sti|a\.s|limited|sirket|dogalgaz|insaat|mekanik|teknoloji|yazilim|ticaret|sanayi|otomotiv|faktoring|teknik|servis|muhendislik|enerji|klima|isitma|sogutma)\b',
+  );
   // The folded string has the same character positions for these Turkish letters.
   static final titlePattern = RegExp(
     r'\b(?:(?:makine|makina|insaat|elektrik(?:\s+elektronik)?|bilgisayar|yazilim)\s+(?:muhendisi|muhendis|muh\.?)|(?:satis|pazarlama|genel|bolge|proje|portfoy)\s+(?:muduru|yoneticisi|uzmani|danismani|yetkilisi)|muhendisi|muhendis|muduru|mudur|yonetici|danisman|uzman|yetkilisi|direktor|manager|engineer|director|ceo)(?![a-z])');
@@ -43,9 +45,22 @@ class CardParser {
   }).join(' ');
 
   static bool _nameLike(String s) {
-    final words = s.split(RegExp(r'\s+'));
-    return words.length >= 2 && words.length <= 5 && !RegExp(r'[\d:@/]').hasMatch(s)
-      && !RegExp(r'\b(yetkili|yetkilisi|bayi|bayii|servis|cozum|cozumleri|sube|subesi|cadde|caddesi)\b').hasMatch(fold(s));
+    final words = s.split(RegExp(r'\s+')).where((w) => w.isNotEmpty).toList();
+    final normalized = fold(s);
+
+    if (words.length < 2 || words.length > 5) return false;
+    if (RegExp(r'[\d:@/]').hasMatch(s)) return false;
+    if (RegExp(
+      r'\b(yetkili|yetkilisi|bayi|bayii|servis|cozum|cozumleri|sube|subesi|cadde|caddesi|teknik|muhendislik|enerji|klima)\b',
+    ).hasMatch(normalized)) {
+      return false;
+    }
+
+    // Avoid accepting badly fragmented OCR such as "SS O" as a person's name.
+    // A genuine two-word name should normally have at least two alphabetic
+    // characters in each token.
+    final alphaToken = RegExp(r'^[A-Za-zÇĞİÖŞÜçğıöşü]{2,}$');
+    return words.every(alphaToken.hasMatch);
   }
   static bool _industryLike(String value) {
     final normalized = fold(value);
@@ -53,6 +68,28 @@ class CardParser {
     return industry.hasMatch(normalized)
         || compact.contains('faktoring')
         || compact.contains('faktorin');
+  }
+
+  static bool _companyLike(String value) {
+    final trimmed = value.trim();
+    final normalized = fold(trimmed);
+
+    if (_industryLike(trimmed)) return true;
+    if (titlePattern.hasMatch(normalized)) return false;
+    if (RegExp(r'[\d:@/]').hasMatch(trimmed)) return false;
+
+    final words = trimmed.split(RegExp(r'\s+')).where((w) => w.isNotEmpty).toList();
+    if (words.isEmpty || words.length > 6) return false;
+
+    // Common business words that OCR may read correctly even when the company
+    // does not contain Ltd./A.Ş. Example: "ERSOY TEKNİK".
+    if (RegExp(
+      r'\b(teknik|servis|muhendislik|enerji|mekanik|dogalgaz|klima|isitma|sogutma|ticaret|sanayi|teknoloji|yazilim|insaat)\b',
+    ).hasMatch(normalized)) {
+      return true;
+    }
+
+    return false;
   }
   static String repairCompany(String value) {
     var repaired = value.trim();
@@ -122,7 +159,7 @@ class CardParser {
         }
       }
       if (mail != null || web != null || hasPhone) continue;
-      if (_industryLike(line) && titlePattern.firstMatch(lower) == null) {
+      if (_companyLike(line) && titlePattern.firstMatch(lower) == null) {
         if (data.company.isEmpty) {
           var company = line;
           // A single-word brand followed by a separate industry line.
