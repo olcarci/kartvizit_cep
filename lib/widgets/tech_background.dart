@@ -45,7 +45,11 @@ class TechPanel extends StatelessWidget {
         ),
       ],
     ),
-    child: child,
+    // Paint ListTile backgrounds and ink above the panel decoration.
+    child: Material(
+      type: MaterialType.transparency,
+      child: child,
+    ),
   );
 }
 
